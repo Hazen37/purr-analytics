@@ -1,0 +1,27 @@
+# Виртуальное окружение
+venv/
+.venv/
+
+# Настройки VS Code
+.vscode/
+.idea/
+
+# Файл с секретами (ключи, пароли)
+.env
+
+# Кэш Python
+__pycache__/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycpython -m src.main
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
