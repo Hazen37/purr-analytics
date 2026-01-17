@@ -1,12 +1,116 @@
-version: "3.9"
-
 services:
+  postgres:
+    image: postgres:16
+    container_name: purr_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: purr
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d purr"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    restart: unless-stopped
+
   metabase:
     image: metabase/metabase:latest
-    container_name: metabase
+    container_name: purr_metabase
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_HOST: postgres
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: postgres
+
+      # чтобы на 1GB не умирал
+      MB_JAVA_OPTS: "-Xms128m -Xmx512m"
     ports:
       - "3000:3000"
+    restart: unless-stopped
+
+  # etl:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: purr_etl
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: purr
+  #     DB_USER: postgres
+  #     DB_PASSWORD: postgres
+  #     TZ: Europe/Moscow
+  #   command: >
+  #     sh -lc "
+  #     touch /app/etl.log;
+
+  #     while true; do
+  #       FROM=2025-10-01
+  #       TO=$(date +%F)
+
+  #       echo \"[etl] run $(date -Iseconds) range=$FROM..$TO\" >> /app/etl.log 2>&1
+
+  #       python -m src.migrations >> /app/etl.log 2>&1 || echo \"[etl] migrations failed $(date -Iseconds)\" >> /app/etl.log 2>&1
+  #       python -m src.update_all $FROM $TO >> /app/etl.log 2>&1 || echo \"[etl] update_all failed $(date -Iseconds)\" >> /app/etl.log 2>&1
+
+  #       sleep 3600
+  #     done
+  #     "
+  #   restart: unless-stopped
+
+  etl_cron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: purr_etl_cron
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      MB_DB_FILE: /metabase-data/metabase.db
-    volumes:
-      - ./metabase-data:/metabase-data
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: purr
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      TZ: Europe/Moscow
+      ETL_FROM: "2025-10-01"
+      ETL_RUN_EVERY_SECONDS: "3600"
+    command: >
+      sh -lc '
+        set -eu
+        mkdir -p /app
+        touch /app/etl.log
+
+        echo "[etl_cron] start $$(date -Iseconds)" | tee -a /app/etl.log
+        python -m src.migrations >> /app/etl.log 2>&1 || echo "[etl_cron] migrations failed $$(date -Iseconds)" >> /app/etl.log 2>&1
+
+        while true; do
+          FROM="$${ETL_FROM}"
+          TO="$$(date +%F)"
+
+          echo "[etl_cron] run $$(date -Iseconds) range $${FROM}..$${TO}" >> /app/etl.log 2>&1
+
+          python -m src.update_all "$${FROM}" "$${TO}" >> /app/etl.log 2>&1 || \
+            echo "[etl_cron] update_all failed $$(date -Iseconds)" >> /app/etl.log 2>&1
+
+          sleep "$${ETL_RUN_EVERY_SECONDS}"
+        done
+      '
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

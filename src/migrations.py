@@ -1,31 +1,19 @@
 # src/migrations.py
-
 """
-Скрипт для создания таблиц в базе данных PostgreSQL.
+Упрощённые миграции: создаём таблицы и "догоняем" схему через ALTER TABLE ... ADD COLUMN IF NOT EXISTS.
 
-Его задача:
-- Один раз запустить и создать нужные таблицы.
-- Если таблицы уже существуют — ничего страшного, мы используем CREATE TABLE IF NOT EXISTS.
-
-Это упрощённый вариант миграций.
-В реальных проектах часто используют Alembic и т.п.,
-но для нашей аналитики достаточно одного скрипта.
+Запуск:
+  python -m src.migrations
 """
 
 from .db import execute_query
 
 
-def create_customers_table():
-    """
-    Создаёт таблицу customers, если она ещё не существует.
+# -----------------------------
+# Core tables
+# -----------------------------
 
-    В этой таблице мы храним агрегированную информацию по клиенту:
-    - customer_id       — наш идентификатор клиента (первая часть ID заказа на Ozon)
-    - first_order_date  — дата первого заказа
-    - last_order_date   — дата последнего заказа
-    - orders_count      — количество заказов клиента
-    - total_revenue     — общая выручка от клиента
-    """
+def create_customers_table():
     query = """
     CREATE TABLE IF NOT EXISTS customers (
         customer_id TEXT PRIMARY KEY,
@@ -40,19 +28,7 @@ def create_customers_table():
 
 def create_orders_table():
     """
-    Создаёт таблицу orders, если она ещё не существует.
-
-    Здесь храним каждый заказ отдельно:
-    - order_id      — уникальный ID заказа/отправления
-    - customer_id   — идентификатор клиента (ссылка на customers.customer_id)
-    - order_date    — дата и время заказа
-    - revenue       — сумма заказа (выручка)
-    - campaign      — строка с идентификатором/названием рекламной кампании (если получится сопоставить)
-    - is_first_order — флаг: первый ли это заказ клиента (True/False)
-
-    Важно:
-    - FOREIGN KEY делает логическую связь с таблицей customers,
-      но мы будем аккуратно следить за порядком вставки данных.
+    Базовая таблица заказов. Важно: часть колонок догоняется отдельными patch_* функциями.
     """
     query = """
     CREATE TABLE IF NOT EXISTS orders (
@@ -67,32 +43,60 @@ def create_orders_table():
     """
     execute_query(query)
 
-def add_ozon_payout_columns_to_orders():
+    # Базовые индексы для фильтраций/джойнов
+    execute_query("CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);")
+
+
+def create_products_table():
     query = """
-    ALTER TABLE orders
-      ADD COLUMN IF NOT EXISTS ozon_fees_total NUMERIC,
-      ADD COLUMN IF NOT EXISTS ozon_payout NUMERIC;
+    CREATE TABLE IF NOT EXISTS products (
+        sku   BIGINT PRIMARY KEY,
+        name  TEXT,
+        flavor TEXT,
+        grams  INT
+    );
     """
     execute_query(query)
 
+
+def create_order_items_table():
+    query = """
+    CREATE TABLE IF NOT EXISTS order_items (
+        id SERIAL PRIMARY KEY,
+        order_id TEXT REFERENCES orders(order_id) ON DELETE CASCADE,
+        sku BIGINT REFERENCES products(sku),
+        quantity INT,
+        price NUMERIC,
+        revenue NUMERIC
+    );
+    """
+    execute_query(query)
+
+    execute_query("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_order_items_sku ON order_items(sku);")
+
+
+def create_order_fee_items_table():
+    query = """
+    CREATE TABLE IF NOT EXISTS order_fee_items (
+      id BIGSERIAL PRIMARY KEY,
+      order_id TEXT REFERENCES orders(order_id) ON DELETE CASCADE,
+      fee_group TEXT,
+      fee_name TEXT,
+      amount NUMERIC,
+      percent NUMERIC,
+      product_id BIGINT,
+      source TEXT DEFAULT 'posting_financial'
+    );
+    """
+    execute_query(query)
+
+    execute_query("CREATE INDEX IF NOT EXISTS idx_order_fee_items_order_id ON order_fee_items(order_id);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_order_fee_items_group_name ON order_fee_items(fee_group, fee_name);")
+
+
 def create_ads_campaigns_table():
-    """
-    Создаёт таблицу ads_campaigns, если она ещё не существует.
-
-    Здесь храним агрегированные показатели по рекламным кампаниям.
-
-    Поля:
-    - campaign_id   — уникальный идентификатор кампании (строка)
-    - name          — понятное имя кампании (из кабинета Ozon Ads)
-    - date          — дата, за которую считаются метрики (например, отчёт по дням)
-    - clicks        — количество кликов
-    - impressions   — количество показов
-    - spend         — расходы (в рублях)
-    - ozon_orders   — количество заказов, которые Ozon приписал этой кампании
-    - ozon_revenue  — выручка по этим заказам
-
-    Мы будем загружать сюда данные из Performance API.
-    """
     query = """
     CREATE TABLE IF NOT EXISTS ads_campaigns (
         campaign_id TEXT,
@@ -108,99 +112,143 @@ def create_ads_campaigns_table():
     """
     execute_query(query)
 
-def create_products_table():
-    """
-    Таблица с товарами (каталог).
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ads_campaigns_date ON ads_campaigns(date);")
 
-    sku    — идентификатор товара в OZON (обычно number, но храним как BIGINT или TEXT).
-    name   — название товара.
-    flavor — вкус корма (курица, говядина, утка...).
-    grams  — граммовка упаковки (например, 400, 800 и т.п.).
 
-    flavor и grams мы будем заполнять из словаря PRODUCT_CATALOG.
-    """
+# -----------------------------
+# Additional / reporting tables
+# -----------------------------
+
+def create_performance_order_attribution_table():
     query = """
-    CREATE TABLE IF NOT EXISTS products (
-        sku   BIGINT PRIMARY KEY,
-        name  TEXT,
-        flavor TEXT,
-        grams  INT
-    );
-    """
-    execute_query(query)
-
-def create_order_items_table():
-    """
-    Строки заказа (позиции).
-
-    Здесь каждая строка = один товар в заказе:
-    - order_id — внешний ключ на orders.order_id
-    - sku      — внешний ключ на products.sku
-    - quantity — количество штук
-    - price    — цена за единицу
-    - revenue  — выручка по строке (price * quantity)
-
-    На уровне метрик мы будем фильтровать по flavor/grams через JOIN
-    orders -> order_items -> products.
-    """
-    query = """
-    CREATE TABLE IF NOT EXISTS order_items (
-        id SERIAL PRIMARY KEY,
-        order_id TEXT REFERENCES orders(order_id) ON DELETE CASCADE,
-        sku BIGINT REFERENCES products(sku),
-        quantity INT,
-        price NUMERIC,
-        revenue NUMERIC
-    );
-    """
-    execute_query(query)
-
-def create_order_fee_items_table():
-    """
-    Детализация удержаний/начислений по заказу.
-    Пока заполняем минимум: комиссия за продажу из financial_data.products[].
-    Позже добавим логистику/эквайринг/рекламу из отчётов.
-    """
-    query = """
-    CREATE TABLE IF NOT EXISTS order_fee_items (
+    CREATE TABLE IF NOT EXISTS performance_order_attribution (
       id BIGSERIAL PRIMARY KEY,
-      order_id TEXT REFERENCES orders(order_id) ON DELETE CASCADE,
-      fee_group TEXT,
-      fee_name TEXT,
+      campaign_id TEXT,
+      campaign_title TEXT,
+      order_id TEXT,
+      ext_order_id TEXT,
+      sku BIGINT,
+      offer_id TEXT,
+      product_name TEXT,
+      stat_date DATE NOT NULL,
+      price NUMERIC,
       amount NUMERIC,
-      percent NUMERIC,
-      product_id BIGINT,
-      source TEXT DEFAULT 'posting_financial'
+      spent NUMERIC,
+      bid NUMERIC,
+      bid_percent NUMERIC,
+      qty INT
     );
     """
     execute_query(query)
 
+    execute_query("CREATE INDEX IF NOT EXISTS idx_poa_order_id ON performance_order_attribution(order_id);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_poa_stat_date ON performance_order_attribution(stat_date);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_poa_campaign_date ON performance_order_attribution(campaign_id, stat_date);")
+
+
+def create_finance_period_costs_table():
+    """
+    Для отчётов/дашбордов: периодные расходы по дням/группам/статьям.
+    """
+    query = """
+    CREATE TABLE IF NOT EXISTS finance_period_costs (
+      cost_date DATE NOT NULL,
+      fee_group TEXT NOT NULL,
+      fee_name  TEXT NOT NULL,
+      amount    NUMERIC NOT NULL DEFAULT 0,
+      PRIMARY KEY (cost_date, fee_group, fee_name)
+    );
+    """
+    execute_query(query)
+
+    execute_query("CREATE INDEX IF NOT EXISTS idx_finance_period_costs_date ON finance_period_costs(cost_date);")
+
+
+# -----------------------------
+# Patch (ALTER TABLE) helpers
+# -----------------------------
+
+def patch_orders_core_columns():
+    """
+    Колонки, которые точно используются в src/etl.py (и уже всплывали ошибками).
+    """
+    query = """
+    ALTER TABLE orders
+      ADD COLUMN IF NOT EXISTS status TEXT,
+      ADD COLUMN IF NOT EXISTS ozon_fees_total NUMERIC,
+      ADD COLUMN IF NOT EXISTS ozon_payout NUMERIC,
+      ADD COLUMN IF NOT EXISTS sales_report NUMERIC;
+    """
+    execute_query(query)
+
+
+def patch_orders_fees_breakdown_columns():
+    """
+    Колонки для recalc_orders_fees_breakdown() (etl.py):
+    - delivery_fee, acquiring_fee, ads_fee (и т.п.)
+    """
+    query = """
+    ALTER TABLE orders
+      ADD COLUMN IF NOT EXISTS ozon_delivery_fee NUMERIC,
+      ADD COLUMN IF NOT EXISTS ozon_acquiring_fee NUMERIC,
+      ADD COLUMN IF NOT EXISTS ozon_ads_fee NUMERIC;
+    """
+    execute_query(query)
+
+
+def patch_orders_performance_columns():
+    """
+    Колонки для performance_orders_etl.py
+    """
+    query = """
+    ALTER TABLE orders
+      ADD COLUMN IF NOT EXISTS campaign_id TEXT,
+      ADD COLUMN IF NOT EXISTS campaign_title TEXT,
+      ADD COLUMN IF NOT EXISTS ozon_ads_attributed NUMERIC;
+    """
+    execute_query(query)
+
+
+# -----------------------------
+# Runner
+# -----------------------------
 
 def run_migrations():
-    """
-    Основная функция, которая вызывает создание всех таблиц.
-
-    Её мы будем вызывать из блока if __name__ == "__main__",
-    чтобы по запуску скрипта одним действием создать всю схему.
-    """
-    print("[migrations] Создаём таблицу customers...")
+    print("[migrations] customers...")
     create_customers_table()
-    print("[migrations] Создаём таблицу orders...")
+
+    print("[migrations] orders...")
     create_orders_table()
-    print("[migrations] Создаём таблицу products...")
+
+    print("[migrations] patch orders (core columns)...")
+    patch_orders_core_columns()
+
+    print("[migrations] patch orders (fees breakdown)...")
+    patch_orders_fees_breakdown_columns()
+
+    print("[migrations] patch orders (performance)...")
+    patch_orders_performance_columns()
+
+    print("[migrations] products...")
     create_products_table()
-    print("[migrations] Создаём таблицу order_items...")
+
+    print("[migrations] order_items...")
     create_order_items_table()
-    print("[migrations] Создаём таблицу order_fee_items...")
+
+    print("[migrations] order_fee_items...")
     create_order_fee_items_table()
-    print("[migrations] Создаём таблицу ads_campaigns...")
-    print("[migrations] Добавляем ozon_fees_total / ozon_payout в orders...")
-    add_ozon_payout_columns_to_orders()
+
+    print("[migrations] ads_campaigns...")
     create_ads_campaigns_table()
-    print("[migrations] Готово!")
+
+    print("[migrations] performance_order_attribution...")
+    create_performance_order_attribution_table()
+
+    print("[migrations] finance_period_costs...")
+    create_finance_period_costs_table()
+
+    print("[migrations] OK ✅")
 
 
 if __name__ == "__main__":
-    # Если запускать этот файл напрямую как модуль:
-    # python -m src.migrations
     run_migrations()
