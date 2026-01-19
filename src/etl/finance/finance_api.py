@@ -14,11 +14,37 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
-
 import requests
+import time
+import random
+import hashlib
 
-from .config import settings
-from .db import execute_query, fetch_one
+from src.core.config import settings
+from src.core.db import execute_query, fetch_one
+
+from src.etl.orders.load_orders import recalc_orders_finance\
+
+def make_fee_uid(
+    source: str,
+    order_id: str | None,
+    ext_order_id: str | None,
+    operation_type: str | None,
+    fee_group: str | None,
+    fee_name: str | None,
+    occurred_at,
+    sku
+) -> str:
+    s = "|".join([
+        source or "",
+        order_id or "",
+        ext_order_id or "",
+        operation_type or "",
+        fee_group or "",
+        fee_name or "",
+        str(occurred_at or ""),
+        str(sku or ""),
+    ])
+    return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 def order_exists(order_id: str) -> bool:
     return fetch_one("SELECT 1 FROM orders WHERE order_id=%s LIMIT 1;", (order_id,)) is not None
@@ -50,8 +76,6 @@ def resolve_order_id(order_id_candidate: str | None) -> tuple[str | None, str | 
 
     return None, cand
 
-from .etl import recalc_orders_finance
-
 BASE_URL = "https://api-seller.ozon.ru"
 
 
@@ -59,9 +83,6 @@ def _dec(x: Any) -> Decimal:
     if x is None:
         return Decimal("0")
     return Decimal(str(x).replace(" ", "").replace(",", "."))
-
-import time
-import random
 
 def _post(path: str, payload: dict) -> dict:
     url = f"{BASE_URL}{path}"
@@ -155,13 +176,28 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
     """
     Загружает транзакции за окно [date_from; date_to] и кладёт в order_fee_items.
     """
+
     insert_q = """
-      INSERT INTO order_fee_items (
-        order_id, ext_order_id, fee_group, fee_name, amount,
-        operation_type, occurred_at, sku, source
-      )
-      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'finance_api');
-    """
+        INSERT INTO order_fee_items (
+        uid,
+        order_id, ext_order_id,
+        fee_group, fee_name,
+        amount, operation_type,
+        occurred_at, sku,
+        source
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'finance_api')
+        ON CONFLICT (uid) DO UPDATE
+        SET
+        order_id = EXCLUDED.order_id,
+        ext_order_id = EXCLUDED.ext_order_id,
+        fee_group = EXCLUDED.fee_group,
+        fee_name = EXCLUDED.fee_name,
+        amount = EXCLUDED.amount,
+        operation_type = EXCLUDED.operation_type,
+        occurred_at = EXCLUDED.occurred_at,
+        sku = EXCLUDED.sku;
+        """
 
     page = 1
     total_rows = 0
@@ -212,20 +248,32 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
 
           # ✅ Если services пустой — пишем одну строку по операции
           if not services:
-              fee_group = _guess_fee_group(str(op_type_name))
-              execute_query(insert_q, (
-                  order_id_to_save,          # order_id
-                  ext_order_id,              # ext_order_id
-                  fee_group,                 # fee_group
-                  normalize_fee_name(str(op_type_name)),  # fee_name
-                  op_amount,                 # amount
-                  str(op_type) if op_type else None,  # operation_type
-                  op_date,                   # occurred_at
-                  None,                      # sku
-              ))
-              total_rows += 1
-              continue
+            fee_group = _guess_fee_group(str(op_type_name))
+            fee_name = normalize_fee_name(str(op_type_name))
+            fee_uid = make_fee_uid(
+                "finance_api",
+                order_id_to_save,
+                ext_order_id,
+                str(op_type) if op_type else None,
+                fee_group,
+                fee_name,
+                op_date,
+                None,
+            )
 
+            execute_query(insert_q, (
+                fee_uid,                   # fee_uid  <-- новый параметр
+                order_id_to_save,          # order_id
+                ext_order_id,              # ext_order_id
+                fee_group,                 # fee_group
+                fee_name,                  # fee_name
+                op_amount,                 # amount
+                str(op_type) if op_type else None,  # operation_type
+                op_date,                   # occurred_at
+                None,                      # sku
+            ))
+            total_rows += 1
+            continue
 
           # ✅ Иначе — пишем построчно по services
           for svc in services:
@@ -244,18 +292,30 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
 
             fee_group = _guess_fee_group(str(name))
 
+            fee_name = normalize_fee_name(str(name))
+            fee_uid = make_fee_uid(
+                "finance_api",
+                order_id_to_save,
+                ext_order_id,
+                str(op_type) if op_type else None,
+                fee_group,
+                fee_name,
+                op_date,
+                sku,
+            )
+
             execute_query(insert_q, (
+                fee_uid,                   # fee_uid  <-- новый параметр
                 order_id_to_save,          # order_id
                 ext_order_id,              # ext_order_id
                 fee_group,                 # fee_group
-                normalize_fee_name(str(name)),  # fee_name
+                fee_name,                  # fee_name
                 amount_dec,                # amount
                 str(op_type) if op_type else None,  # operation_type
                 op_date,                   # occurred_at
                 sku,                       # sku
             ))
             total_rows += 1
-
 
         # пагинация
         # Часто в ответе есть page_count/total — но чтобы не гадать, делаем простой критерий:
@@ -273,7 +333,7 @@ def run(date_from_str: str, date_to_str: str):
     date_to = datetime.strptime(date_to_str, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
 
     # чистим предыдущую загрузку API
-    execute_query("DELETE FROM order_fee_items WHERE source='finance_api';")
+    # execute_query("DELETE FROM order_fee_items WHERE source='finance_api';")
 
     # режем период на окна по 10 дней (ограничение метода). :contentReference[oaicite:4]{index=4}
     window = timedelta(days=10)

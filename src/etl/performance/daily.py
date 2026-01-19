@@ -3,11 +3,9 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from decimal import Decimal
 import requests
-import csv
-import io
 
-from .config import settings
-from .db import execute_query
+from src.core.config import settings
+from src.core.db import execute_query
 
 BASE = "https://api-performance.ozon.ru"
 
@@ -84,8 +82,6 @@ def load_daily(date_from: str, date_to: str) -> int:
         n += 1
 
     return n
-
-from datetime import datetime, timedelta
 
 MAX_WINDOW_DAYS = 30  # безопасно (если лимит 62)
 

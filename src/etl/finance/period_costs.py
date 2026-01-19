@@ -7,7 +7,7 @@ order_fee_items.source='finance_api' AND order_id IS NULL
   python -m src.period_costs_etl 2025-10-01 2025-12-12
 """
 
-from .db import execute_query
+from src.core.db import execute_query
 
 def recalc_period_costs(date_from: str, date_to: str):
     # 1) удаляем старые агрегаты за период (чтобы ETL был идемпотентный)

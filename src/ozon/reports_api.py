@@ -3,7 +3,7 @@
 import time
 import requests
 
-from .config import settings
+from src.core.config import settings
 
 BASE_URL = "https://api-seller.ozon.ru"
 

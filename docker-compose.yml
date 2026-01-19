@@ -73,6 +73,8 @@ services:
   #   restart: unless-stopped
 
   etl_cron:
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: Dockerfile
@@ -87,29 +89,33 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       TZ: Europe/Moscow
-      ETL_FROM: "2025-10-01"
-      ETL_RUN_EVERY_SECONDS: "3600"
+      # ETL_FROM: "2025-10-01"
+      ETL_RUN_EVERY_SECONDS: "1200"
+      ETL_LOOKBACK_DAYS: "30"
     command: >
       sh -lc '
-        set -eu
+        set -e
+
+        : "$${ETL_RUN_EVERY_SECONDS:=1200}"
+        : "$${ETL_LOOKBACK_DAYS:=30}"
+
         mkdir -p /app
         touch /app/etl.log
 
+        echo "[etl_cron] ETL_RUN_EVERY_SECONDS=$$ETL_RUN_EVERY_SECONDS" | tee -a /app/etl.log
+        echo "[etl_cron] ETL_LOOKBACK_DAYS=$$ETL_LOOKBACK_DAYS" | tee -a /app/etl.log
         echo "[etl_cron] start $$(date -Iseconds)" | tee -a /app/etl.log
-        python -m src.migrations >> /app/etl.log 2>&1 || echo "[etl_cron] migrations failed $$(date -Iseconds)" >> /app/etl.log 2>&1
 
         while true; do
-          FROM="$${ETL_FROM}"
-          TO="$$(date +%F)"
+          echo "[etl_cron] run $$(date -Iseconds)" | tee -a /app/etl.log
 
-          echo "[etl_cron] run $$(date -Iseconds) range $${FROM}..$${TO}" >> /app/etl.log 2>&1
+          python -m src.cli.update_all >> /app/etl.log 2>&1 || \
+            echo "[etl_cron] update_all failed $$(date -Iseconds)" >> /app/etl.log
 
-          python -m src.update_all "$${FROM}" "$${TO}" >> /app/etl.log 2>&1 || \
-            echo "[etl_cron] update_all failed $$(date -Iseconds)" >> /app/etl.log 2>&1
-
-          sleep "$${ETL_RUN_EVERY_SECONDS}"
+          sleep "$$ETL_RUN_EVERY_SECONDS"
         done
       '
+
     restart: unless-stopped
 
 volumes:

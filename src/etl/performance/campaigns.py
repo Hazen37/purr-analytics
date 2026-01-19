@@ -3,8 +3,8 @@ from __future__ import annotations
 import requests
 from datetime import datetime
 
-from .config import settings
-from .db import execute_query
+from src.core.config import settings
+from src.core.db import execute_query
 
 from psycopg2.extras import Json
 

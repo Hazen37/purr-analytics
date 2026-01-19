@@ -1,27 +1,136 @@
-# Виртуальное окружение
-venv/
-.venv/
-
-# Настройки VS Code
-.vscode/
-.idea/
-
-# Файл с секретами (ключи, пароли)
-.env
-
-# Кэш Python
-__pycache__/
+# =============================
 
 # Python
-__pycache__/
-*.pyc
+
+# =============================
+
+**pycache**/
+*.py[cod]
 *.pyo
 *.pyd
-*.pycpython -m src.main
+*.so
+.Python
 
-# OS
+# virtualenv
+
+.venv/
+venv/
+ENV/
+env/
+
+# pip
+
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =============================
+
+# IDE / Editors
+
+# =============================
+
+.idea/
+.vscode/
+*.swp
+*.swo
 .DS_Store
-Thumbs.db
+
+# =============================
 
 # Logs
+
+# =============================
+
 *.log
+logs/
+
+# =============================
+
+# Docker
+
+# =============================
+
+# локальные override-файлы
+
+docker-compose.override.yml
+
+# временные docker-файлы
+
+*.pid
+
+# =============================
+
+# Databases / Volumes
+
+# =============================
+
+# если вдруг кто-то примонтирует локально
+
+postgres_data/
+pgdata/
+
+# дампы
+
+*.sql
+*.dump
+
+# =============================
+
+# Metabase
+
+# =============================
+
+# локальная БД metabase (если без внешнего postgres)
+
+metabase.db
+metabase.db.mv.db
+metabase.db.trace.db
+
+# =============================
+
+# OS / Misc
+
+# =============================
+
+Thumbs.db
+*.tmp
+*.bak
+*.old
+
+# =============================
+
+# Secrets / ENV
+
+# =============================
+
+.env
+.env.*
+
+# =============================
+
+# CSV / Exports
+
+# =============================
+
+*.csv
+exports/
+
+# =============================
+
+# Tests / Coverage (на будущее)
+
+# =============================
+
+.coverage
+htmlcov/
+.pytest_cache/
+
+# =============================
+
+# Node / Frontend (если появится)
+
+# =============================
+
+node_modules/
+dist/
+build/

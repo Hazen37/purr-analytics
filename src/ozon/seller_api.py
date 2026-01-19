@@ -20,8 +20,7 @@ import requests
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-from .config import settings
-
+from src.core.config import settings
 
 class OzonSellerAPIError(Exception):
     """

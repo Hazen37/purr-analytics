@@ -6,14 +6,11 @@ import time
 import random
 import requests
 
-from .config import settings
-from .db import execute_query, fetch_one
-
+from src.core.config import settings
+from src.core.db import execute_query
+from src.core.db import fetch_one
 
 BASE_URL = "https://api-performance.ozon.ru"
-
-from datetime import datetime
-from decimal import Decimal
 
 def parse_date_any(s: str | None):
     """Парсим даты из Performance API: '05.12.2025' или '2025-12-05'."""
@@ -35,8 +32,6 @@ def dec_ru(x) -> Decimal:
     if s == "":
         return Decimal("0")
     return Decimal(s.replace(",", "."))
-
-from .db import fetch_one
 
 def resolve_posting_order_id(order_number: str | None) -> tuple[str | None, str | None]:
     """
@@ -63,8 +58,6 @@ def _dec(x) -> Decimal:
     if x is None:
         return Decimal("0")
     return Decimal(str(x).replace(" ", "").replace(",", "."))
-
-from datetime import datetime, date
 
 def _parse_date(x) -> date | None:
     if not x:
