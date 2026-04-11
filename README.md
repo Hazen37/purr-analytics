@@ -1,8 +1,16 @@
-# Purr Analytics — ETL и аналитика Ozon
+# Purr Analytics — ETL и аналитика маркетплейсов
 
-Проект загружает данные из **Ozon Seller API** и **Performance API** в **PostgreSQL**, строит агрегаты для **Metabase** и содержит вспомогательные CLI (отладка API, маппинг товаров, Telegram-алерты по акциям).
+Проект загружает данные из **Ozon Seller API** и **Performance API** в **PostgreSQL**, строит агрегаты для **Metabase** и содержит вспомогательные CLI (отладка API, маппинг товаров, Telegram-алерты по акциям).  
+Также добавлен базовый каркас интеграций для **Yandex Market** и **Wildberries** (конфиг, флаги включения и API-клиенты).
+
+Репозиторий: [github.com/Hazen37/purr-analytics](https://github.com/Hazen37/purr-analytics)
 
 Принцип работы — **идемпотентный ETL** с **окном lookback** (`ETL_LOOKBACK_DAYS`): повторные запуски не должны плодить дубликаты и ломать агрегаты.
+
+Подробная карта модулей и потока ETL:
+
+- [docs/architecture.md](docs/architecture.md)
+- [docs/etl-flow.md](docs/etl-flow.md)
 
 ---
 
@@ -25,12 +33,15 @@ purr-analytics/
 ├── docker-compose.yml      # postgres + metabase + etl_runner (разовый прогон ETL)
 ├── Dockerfile
 ├── requirements.txt
-├── rebuild.sh              # удобная обёртка: build + run etl_runner update_all
+├── rebuild.sh              # build образа etl_runner + run update_all
 ├── deploy/
 │   ├── initdb/
 │   │   └── 01-create-metabase.sql   # CREATE DATABASE metabase
 │   └── sql/
 │       └── orders_clean.sql         # (опционально) старая схема view
+├── docs/
+│   ├── architecture.md              # модули и runtime-контуры
+│   └── etl-flow.md                  # пошаговый flow update_all
 │
 └── src/
     ├── cli/
@@ -41,7 +52,7 @@ purr-analytics/
     │
     ├── core/
     │   ├── config.py                # .env, ключи Ozon, БД
-    │   └── db.py                    # psycopg2, execute_query / fetch_*
+    │   └── db.py                    # execute_query, execute_many, fetch_*
     │
     ├── migrations/
     │   └── run.py                   # идемпотентные DDL
@@ -65,6 +76,8 @@ purr-analytics/
     │   └── alerts/ozon_discounts_alerts.py   # акции + Telegram
 ```
 
+`src/core/db.py` предоставляет **`execute_many`** для пакетных INSERT/UPSERT в горячих местах (финансы, performance attribution, комиссии из posting).
+
 ---
 
 ## Архитектура ETL
@@ -79,14 +92,13 @@ purr-analytics/
 
 1. Миграции БД.
 2. Пересоздание представления **`orders_clean`** (исключение тестового покупателя, см. `TEST_CUSTOMER_ID`).
-3. Заказы FBO + товары + клиенты + комиссии из posting.
-4. **`recalc_order_numbers()`** в БД — нумерация заказов/групп для не отменённых.
-5. Finance API → `order_fee_items`.
-6. Пересчёт **`finance_period_costs`**.
-7. Опционально **Performance** (только если `ETL_ENABLE_PERFORMANCE=1`).
-8. Отзывы (`ETL_ENABLE_REVIEWS`).
-9. Метрики воронки по SKU за период (`ozon_sku_day_metrics`, `ETL_ENABLE_ANALYTICS`).
-10. Текущие остатки **`stocks_current`** (`ETL_ENABLE_STOCKS`).
+3. Заказы FBO + товары + клиенты + комиссии из posting; внутри шага заказов вызывается **`recalc_order_numbers()`** в БД (отдельного дублирующего шага в `update_all` нет).
+4. Finance API → `order_fee_items`.
+5. Пересчёт **`finance_period_costs`**.
+6. Опционально **Performance** (только если `ETL_ENABLE_PERFORMANCE=1`).
+7. Отзывы (`ETL_ENABLE_REVIEWS`).
+8. Метрики воронки по SKU (`ozon_sku_day_metrics`, `ETL_ENABLE_ANALYTICS`).
+9. Текущие остатки **`stocks_current`** (`ETL_ENABLE_STOCKS`).
 
 Представление **`vw_sku_day_business`** (создаётся в миграциях) объединяет `ozon_sku_day_metrics` с заказами и справочником `products`.
 
@@ -94,33 +106,46 @@ purr-analytics/
 
 ## Быстрый старт
 
+На сервере часто установлен классический **`docker-compose`** (с дефисом). Если доступна подкоманда **`docker compose`** (плагин v2), можно использовать её — команды эквивалентны. Ниже приведён вариант с `docker-compose`.
+
 ### 1. Инфраструктура
 
 ```bash
 cd purr-analytics
-docker compose up -d
+docker-compose up -d
 ```
 
 Сервисы:
 
 - **`purr_postgres`** — PostgreSQL 16, БД `purr`, порт `5432`.
 - **`purr_metabase`** — Metabase, порт `3000` (внутренняя БД Metabase — отдельная `metabase`, создаётся скриптом initdb).
-- **`etl_runner`** — собирается из `Dockerfile`, по умолчанию один раз выполняет `python -m src.cli.update_all` (`restart: "no"`). Для повторных прогонов используйте `docker compose run` (см. ниже).
+- **`etl_runner`** — собирается из `Dockerfile`, по умолчанию один раз выполняет `python -m src.cli.update_all` (`restart: "no"`). Для повторных прогонов используйте `docker-compose run` (см. ниже).
 
 ### 2. Секреты и `.env`
 
 В корне нужен **`.env`** (не коммитить): как минимум `OZON_CLIENT_ID`, `OZON_API_KEY`. Для Performance: `OZON_PERF_CLIENT_ID`, `OZON_PERF_CLIENT_SECRET`.  
+Для новых маркетплейсов: `YANDEXMARKET_API_KEY`, `YANDEXMARKET_CAMPAIGN_ID`, `YANDEXMARKET_BUSINESS_ID`, `YANDEXMARKET_WAREHOUSE_ID`, `WILDBERRIES_API_KEY`.  
+Опционально для WB можно задать:
+- `WILDBERRIES_BASE_URL` (по умолчанию `https://marketplace-api.wildberries.ru`);
+- `WILDBERRIES_COMMUNICATION_BASE_URL` (по умолчанию `https://feedbacks-api.wildberries.ru`);
+- `WILDBERRIES_ANALYTICS_BASE_URL` (по умолчанию `https://seller-analytics-api.wildberries.ru`).
 Параметры БД в `docker-compose` для `etl_runner` заданы явно (`DB_HOST=postgres`, `DB_NAME=purr`); при локальном запуске без Docker выставьте `DB_*` в соответствии с `src/core/config.py` (дефолт имени БД в коде — `ozon_analytics`, для compose используется **`purr`**).
 
 ### 3. Миграции
 
 ```bash
-docker compose run --rm etl_runner python -m src.migrations.run
+docker-compose run --rm etl_runner python -m src.migrations.run
 ```
 
-### 4. Запуск ETL
+### 4. Образ ETL и запуск
 
-Через обёртку (пересборка образа + прогон):
+После изменения кода в репозитории пересоберите образ, иначе контейнер возьмёт старую копию:
+
+```bash
+docker-compose build etl_runner
+```
+
+Через обёртку (пересборка + прогон):
 
 ```bash
 ./rebuild.sh
@@ -129,13 +154,13 @@ docker compose run --rm etl_runner python -m src.migrations.run
 Или вручную:
 
 ```bash
-docker compose run --rm etl_runner sh -lc "ETL_LOOKBACK_DAYS=30 python -m src.cli.update_all"
+docker-compose run --rm etl_runner sh -lc "ETL_LOOKBACK_DAYS=30 python -m src.cli.update_all"
 ```
 
 С явным диапазоном дат:
 
 ```bash
-docker compose run --rm etl_runner python -m src.cli.update_all 2025-10-01 2025-12-31
+docker-compose run --rm etl_runner python -m src.cli.update_all 2025-10-01 2025-12-31
 ```
 
 ---
@@ -145,11 +170,22 @@ docker compose run --rm etl_runner python -m src.cli.update_all 2025-10-01 2025-
 | Переменная | Смысл |
 |------------|--------|
 | `ETL_LOOKBACK_DAYS` | Глубина окна, если даты не заданы в CLI (по умолчанию `30`). |
+| `ETL_ENABLE_OZON` | `1` — включить Ozon core-шаги (orders/finance/period_costs). Для прогона только YM/WB ставьте `0`. |
 | `ETL_ENABLE_PERFORMANCE` | `1` — включить блок Performance (кампании, дневная статистика, атрибуция). По умолчанию **`0`**. |
 | `ETL_ENABLE_PERF_CAMPAIGNS` / `ETL_ENABLE_PERF_DAILY` / `ETL_ENABLE_PERF_ORDERS` | Уточнение шагов Performance при `ETL_ENABLE_PERFORMANCE=1` (по умолчанию все `1`). |
 | `ETL_ENABLE_REVIEWS` | Загрузка отзывов (по умолчанию `1`). |
 | `ETL_ENABLE_ANALYTICS` | `ozon_sku_day_metrics` (по умолчанию `1`). |
 | `ETL_ENABLE_STOCKS` | `stocks_current` (по умолчанию `1`). |
+| `ETL_ENABLE_YANDEXMARKET` | `1` — включить пайплайн Яндекс Маркета (по умолчанию `0`, пока в стадии подключения шагов ETL). |
+| `ETL_ENABLE_WILDBERRIES` | `1` — включить пайплайн Wildberries (по умолчанию `0`, пока в стадии подключения шагов ETL). |
+| `ETL_ENABLE_YM_FINANCE` / `ETL_ENABLE_WB_FINANCE` | Включение finance-этапов YM/WB (по умолчанию `1`). |
+| `ETL_ENABLE_YM_REVIEWS` / `ETL_ENABLE_WB_REVIEWS` | Включение загрузки отзывов YM/WB (по умолчанию `1`). |
+| `ETL_ENABLE_YM_ANALYTICS` / `ETL_ENABLE_WB_ANALYTICS` | Включение витрин `*_sku_day_metrics` (по умолчанию `1`). |
+| `ETL_ENABLE_YM_ADS` / `ETL_ENABLE_WB_ADS` | Включение daily ads-витрин `ym_ads_campaign_daily` / `wb_ads_campaign_daily` (по умолчанию `1`). |
+| `ETL_ENABLE_YM_STOCKS` / `ETL_ENABLE_WB_STOCKS` | Включение загрузки текущих остатков YM/WB (по умолчанию `1`). |
+| `ETL_ENABLE_MARKETPLACE_ALERTS` | Отправка health-алертов в Telegram отдельными сообщениями по площадкам с emoji (по умолчанию `0`). |
+| `ETL_ENABLE_ALERTS_OZON` / `ETL_ENABLE_ALERTS_YANDEXMARKET` / `ETL_ENABLE_ALERTS_WILDBERRIES` | Включение секций health-alerts по каждой площадке (по умолчанию `1`). |
+| `ETL_ENABLE_NOTIFY_OZON` / `ETL_ENABLE_NOTIFY_YANDEXMARKET` / `ETL_ENABLE_NOTIFY_WILDBERRIES` | Включение отправки Telegram-уведомлений по каждой площадке отдельно (по умолчанию `1`). |
 | `ETL_STRICT_MODE` | `1` — падать при ошибке на любом шаге; `0` — продолжать после некритичных шагов (кроме обязательных: миграции, заказы). |
 | `ETL_LOG_TIME_UTC` | `1` — время в логах в UTC (по умолчанию). |
 | `TEST_CUSTOMER_ID` | ID покупателя, исключаемого из `orders_clean` (дефолт в коде задан под тестовый аккаунт). |
@@ -204,14 +240,31 @@ FROM performance_campaign_daily
 GROUP BY 1 ORDER BY 1 DESC;
 ```
 
+Пример смока на коротком окне (без Performance/отзывов, остальное по флагам):
+
+```bash
+docker-compose build etl_runner
+docker-compose run --rm etl_runner sh -lc \
+  "ETL_STRICT_MODE=0 ETL_ENABLE_PERFORMANCE=0 ETL_ENABLE_REVIEWS=0 \
+   ETL_ENABLE_ANALYTICS=1 ETL_ENABLE_STOCKS=1 \
+   python -m src.cli.update_all 2026-04-10 2026-04-11"
+```
+
+Полезные проверки в БД:
+
+```sql
+SELECT COUNT(*) FROM ozon_sku_day_metrics;
+SELECT COUNT(*), MAX(updated_at) FROM stocks_current;
+```
+
 ---
 
 ## Отладка
 
-Логи контейнера, который выполнял ETL:
+Логи последнего запуска `etl_runner` (если использовался `docker-compose run`):
 
 ```bash
-docker compose logs etl_runner
+docker-compose logs etl_runner
 ```
 
 PostgreSQL:
@@ -228,3 +281,4 @@ docker exec -it purr_postgres psql -U postgres -d purr
 - Вынести DDL таблиц алертов в `migrations/run.py`.
 - Healthcheck CLI, bulk COPY, более инкрементальный Finance API.
 - Автоматические data tests (объёмы строк, свежесть данных).
+- TODO: включить полноценную загрузку `wb_stocks_current` через `seller-analytics` после получения WB `Personal/Service` токена с категорией `Analytics` (с `base` токеном endpoint возвращает `403 base token is not allowed`).

@@ -84,6 +84,20 @@ def execute_query(query: str, params: tuple | None = None):
         cur.execute(query, params)
 
 
+def execute_many(query: str, params_list: list[tuple]):
+    """
+    Выполнить один SQL для набора параметров в одной транзакции.
+
+    query       - SQL строка с плейсхолдерами %s
+    params_list - список кортежей параметров
+    """
+    if not params_list:
+        return
+
+    with get_cursor(commit=True) as cur:
+        cur.executemany(query, params_list)
+
+
 def fetch_all(query: str, params: tuple | None = None):
     """
     Выполнить SELECT и вернуть все строки.

@@ -7,17 +7,16 @@ import random
 import requests
 
 from src.core.config import settings
-from src.core.db import execute_query
-from src.core.db import fetch_one
+from src.core.db import execute_many, execute_query, fetch_one
 
 BASE_URL = "https://api-performance.ozon.ru"
 
 def parse_date_any(s: str | None):
-    """Парсим даты из Performance API: '05.12.2025' или '2025-12-05'."""
+    """Парсим даты Performance API: 2025-12-05, 05.12.2025, 05/12/2025."""
     if not s:
         return None
     s = str(s).strip()
-    for fmt in ("%Y-%m-%d", "%d.%m.%Y"):
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
         try:
             return datetime.strptime(s, fmt).date()
         except ValueError:
@@ -53,39 +52,6 @@ def resolve_posting_order_id(order_number: str | None) -> tuple[str | None, str 
         return row["order_id"], cand
 
     return None, cand
-
-def _dec(x) -> Decimal:
-    if x is None:
-        return Decimal("0")
-    return Decimal(str(x).replace(" ", "").replace(",", "."))
-
-def _parse_date(x) -> date | None:
-    if not x:
-        return None
-    s = str(x).strip()
-
-    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%SZ"):
-        try:
-            return datetime.strptime(s, fmt).date()
-        except ValueError:
-            pass
-
-    # если внезапно пришло "2025-10-24 00:00:00"
-    try:
-        return datetime.fromisoformat(s.replace("Z", "+00:00")).date()
-    except Exception:
-        return None
-
-def parse_date_any(s: str | None):
-    if not s:
-        return None
-    s = str(s).strip()
-    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
-        try:
-            return datetime.strptime(s, fmt).date()
-        except ValueError:
-            pass
-    raise ValueError(f"Unknown date format: {s}")
 
 def _post_json(path: str, payload: dict, token: str) -> dict:
     url = f"{BASE_URL}{path}"
@@ -128,27 +94,6 @@ def get_token() -> str:
     data = requests.post(f"{BASE_URL}/api/client/token", json=payload, timeout=60)
     data.raise_for_status()
     return data.json()["access_token"]
-
-def order_exists(order_id: str) -> bool:
-    return fetch_one("SELECT 1 FROM orders WHERE order_id=%s LIMIT 1;", (order_id,)) is not None
-
-def resolve_order_id(candidate: str | None) -> tuple[str | None, str | None]:
-    if not candidate:
-        return None, None
-
-    cand = str(candidate).strip()
-
-    if order_exists(cand):
-        return cand, None
-
-    row = fetch_one(
-        "SELECT order_id FROM orders WHERE order_id LIKE %s ORDER BY order_date DESC LIMIT 1;",
-        (cand + "-%",)
-    )
-    if row and row.get("order_id"):
-        return row["order_id"], cand
-
-    return None, cand
 
 def generate_orders_report(date_from: date, date_to: date, token: str) -> str:
     payload = {
@@ -201,6 +146,7 @@ def load_report_rows(rows: list[dict]) -> int:
     """
 
     n = 0
+    batch_params: list[tuple] = []
     for r in rows:
         # В orders-report может НЕ быть campaignId — тогда кладём в '0' = UNKNOWN,
         # чтобы пройти NOT NULL в таблице performance_order_attribution.
@@ -250,7 +196,7 @@ def load_report_rows(rows: list[dict]) -> int:
         else:
           unmatched += 1
 
-        execute_query(insert_q, (
+        batch_params.append((
             campaign_id, campaign_title,
             order_id, ext_order_id,
             sku, offer_id, product_name,
@@ -260,6 +206,7 @@ def load_report_rows(rows: list[dict]) -> int:
         ))
         n += 1
 
+    execute_many(insert_q, batch_params)
     print(f"[perf_orders] matched to orders: {matched}, unmatched: {unmatched}")
     return n
 
@@ -313,7 +260,7 @@ def run(date_from_str: str, date_to_str: str):
         print(f"[perf_orders] window {cur_from}..{cur_to}")
 
         uuid = generate_orders_report(cur_from, cur_to, token)
-        link = wait_report(uuid, token)
+        wait_report(uuid, token)
 
         # если link вернул /api/client/statistics/report?UUID=...
         # вытащим UUID оттуда просто берём uuid

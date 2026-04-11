@@ -467,6 +467,242 @@ def create_stocks_current_table() -> None:
     );
     """)
     execute_query("CREATE INDEX IF NOT EXISTS idx_stocks_current_updated_at ON public.stocks_current(updated_at);")
+
+
+def create_yandex_market_tables() -> None:
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_orders (
+            order_id TEXT PRIMARY KEY,
+            campaign_id BIGINT,
+            business_id BIGINT,
+            order_date TIMESTAMP,
+            status TEXT,
+            currency TEXT,
+            total_amount NUMERIC,
+            warehouse_id TEXT,
+            updated_at TIMESTAMP DEFAULT now(),
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_orders_order_date ON ym_orders(order_date);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_orders_status ON ym_orders(status);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_order_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT REFERENCES ym_orders(order_id) ON DELETE CASCADE,
+            offer_id TEXT,
+            sku TEXT,
+            name TEXT,
+            quantity NUMERIC,
+            price NUMERIC,
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_order_items_order_id ON ym_order_items(order_id);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_order_items_offer_id ON ym_order_items(offer_id);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_finance_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT REFERENCES ym_orders(order_id) ON DELETE CASCADE,
+            fee_type TEXT,
+            amount NUMERIC,
+            currency TEXT,
+            happened_at TIMESTAMP,
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_finance_items_order_id ON ym_finance_items(order_id);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_stocks_current (
+            offer_id TEXT,
+            sku TEXT,
+            warehouse_id TEXT,
+            warehouse_name TEXT,
+            fit NUMERIC DEFAULT 0,
+            freeze_qty NUMERIC DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT now(),
+            raw JSONB,
+            PRIMARY KEY (offer_id, warehouse_id)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_stocks_current_updated_at ON ym_stocks_current(updated_at);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_reviews (
+            review_id TEXT PRIMARY KEY,
+            order_id TEXT,
+            rating NUMERIC,
+            review_text TEXT,
+            published_at TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT now(),
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_reviews_published_at ON ym_reviews(published_at);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_sku_day_metrics (
+            metric_date DATE NOT NULL,
+            sku TEXT NOT NULL,
+            impressions BIGINT DEFAULT 0,
+            views BIGINT DEFAULT 0,
+            ordered_units BIGINT DEFAULT 0,
+            revenue NUMERIC DEFAULT 0,
+            loaded_at TIMESTAMP DEFAULT now(),
+            PRIMARY KEY (metric_date, sku)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_sku_day_metrics_date ON ym_sku_day_metrics(metric_date);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ym_ads_campaign_daily (
+            campaign_id TEXT NOT NULL,
+            stat_date DATE NOT NULL,
+            impressions BIGINT DEFAULT 0,
+            clicks BIGINT DEFAULT 0,
+            spend NUMERIC DEFAULT 0,
+            orders_cnt BIGINT DEFAULT 0,
+            orders_amount NUMERIC DEFAULT 0,
+            loaded_at TIMESTAMP DEFAULT now(),
+            raw JSONB,
+            PRIMARY KEY (campaign_id, stat_date)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ym_ads_campaign_daily_date ON ym_ads_campaign_daily(stat_date);")
+
+
+def create_wildberries_tables() -> None:
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_orders (
+            order_id TEXT PRIMARY KEY,
+            order_uid TEXT,
+            order_date TIMESTAMP,
+            status TEXT,
+            warehouse_name TEXT,
+            article TEXT,
+            nm_id BIGINT,
+            price NUMERIC,
+            sale_price NUMERIC,
+            updated_at TIMESTAMP DEFAULT now(),
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_orders_order_date ON wb_orders(order_date);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_orders_status ON wb_orders(status);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_order_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT REFERENCES wb_orders(order_id) ON DELETE CASCADE,
+            sku TEXT,
+            article TEXT,
+            quantity NUMERIC,
+            price NUMERIC,
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_order_items_order_id ON wb_order_items(order_id);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_order_items_article ON wb_order_items(article);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_finance_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT REFERENCES wb_orders(order_id) ON DELETE CASCADE,
+            fee_type TEXT,
+            amount NUMERIC,
+            happened_at TIMESTAMP,
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_finance_items_order_id ON wb_finance_items(order_id);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_stocks_current (
+            sku TEXT,
+            warehouse_name TEXT,
+            quantity NUMERIC DEFAULT 0,
+            in_way_to_client NUMERIC DEFAULT 0,
+            in_way_from_client NUMERIC DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT now(),
+            raw JSONB,
+            PRIMARY KEY (sku, warehouse_name)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_stocks_current_updated_at ON wb_stocks_current(updated_at);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_reviews (
+            review_id TEXT PRIMARY KEY,
+            nm_id BIGINT,
+            rating NUMERIC,
+            review_text TEXT,
+            published_at TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT now(),
+            raw JSONB
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_reviews_published_at ON wb_reviews(published_at);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_sku_day_metrics (
+            metric_date DATE NOT NULL,
+            sku TEXT NOT NULL,
+            impressions BIGINT DEFAULT 0,
+            views BIGINT DEFAULT 0,
+            ordered_units BIGINT DEFAULT 0,
+            revenue NUMERIC DEFAULT 0,
+            loaded_at TIMESTAMP DEFAULT now(),
+            PRIMARY KEY (metric_date, sku)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_sku_day_metrics_date ON wb_sku_day_metrics(metric_date);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS wb_ads_campaign_daily (
+            campaign_id TEXT NOT NULL,
+            stat_date DATE NOT NULL,
+            impressions BIGINT DEFAULT 0,
+            clicks BIGINT DEFAULT 0,
+            spend NUMERIC DEFAULT 0,
+            orders_cnt BIGINT DEFAULT 0,
+            orders_amount NUMERIC DEFAULT 0,
+            loaded_at TIMESTAMP DEFAULT now(),
+            raw JSONB,
+            PRIMARY KEY (campaign_id, stat_date)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_wb_ads_campaign_daily_date ON wb_ads_campaign_daily(stat_date);")
     
 # -----------------------------
 # Runner
@@ -514,6 +750,12 @@ def run() -> None:
 
     print("[migrations] stocks_current...")
     create_stocks_current_table()
+
+    print("[migrations] ym_* tables...")
+    create_yandex_market_tables()
+
+    print("[migrations] wb_* tables...")
+    create_wildberries_tables()
 
     print("[migrations] OK ✅")
 

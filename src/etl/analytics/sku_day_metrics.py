@@ -63,7 +63,7 @@ def _guess_min_from_error(msg: str) -> Optional[date]:
     return None
 
 
-def fetch_sku_day_funnel(client: OzonSellerAPIClient, date_from: date, date_to: date) -> List[Dict]:
+def fetch_sku_day_funnel(client, date_from: date, date_to: date) -> List[Dict]:
     metrics = ["impressions", "views", "cart_adds", "ordered_units", "revenue"]
     dimensions = ["day", "sku"]
 
@@ -88,8 +88,6 @@ def fetch_sku_day_funnel(client: OzonSellerAPIClient, date_from: date, date_to: 
             raise
 
     raw = _extract_rows(first)
-    
-    print("DEBUG METRICS SAMPLE:", raw[0])
     
     offset = 1000
     while True:

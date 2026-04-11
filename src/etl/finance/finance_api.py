@@ -1,4 +1,3 @@
-# src/finance_report_etl.py
 """
 ETL "прочих трат" из Ozon Seller API:
 - тянем транзакции /v3/finance/transaction/list
@@ -6,7 +5,7 @@ ETL "прочих трат" из Ozon Seller API:
 - пересчитываем итог по заказам в orders (recalc_orders_finance)
 
 Запуск:
-  python -m src.finance_report_etl 2025-12-01 2025-12-12
+  python -m src.etl.finance.finance_api 2025-12-01 2025-12-12
 """
 
 from __future__ import annotations
@@ -20,9 +19,9 @@ import random
 import hashlib
 
 from src.core.config import settings
-from src.core.db import execute_query, fetch_one
+from src.core.db import execute_many, fetch_one
 
-from src.etl.orders.load_orders import recalc_orders_finance\
+from src.etl.orders.load_orders import recalc_orders_finance
 
 def make_fee_uid(
     source: str,
@@ -206,19 +205,12 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
         data = fetch_transactions(date_from, date_to, page=page, page_size=200)
         result = data.get("result") or {}
         operations = result.get("operations") or []
-        # import json
 
-        # if operations:
-        #   print("=== SAMPLE OPERATION JSON ===")
-        #   print(json.dumps(operations[0], ensure_ascii=False, indent=2))
-        #   print("=== END SAMPLE OPERATION JSON ===")
-        #   return 0
-        
         if not operations:
             break
 
+        page_params: list[tuple] = []
         for op in operations:
-          # ✅ правильная привязка к заказу
           posting = op.get("posting") or {}
           posting_number = (
               posting.get("posting_number")
@@ -227,15 +219,6 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
               or None
           )
           order_id = str(posting_number).strip() if posting_number else None
-
-          # order_id_candidate = order_id
-
-          # if order_id_candidate and order_exists(order_id_candidate):
-          #     order_id_to_save = order_id_candidate
-          #     ext_order_id = None
-          # else:
-          #     order_id_to_save = None
-          #     ext_order_id = order_id_candidate
 
           order_id_to_save, ext_order_id = resolve_order_id(order_id)
 
@@ -246,7 +229,6 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
 
           services = op.get("services") or []
 
-          # ✅ Если services пустой — пишем одну строку по операции
           if not services:
             fee_group = _guess_fee_group(str(op_type_name))
             fee_name = normalize_fee_name(str(op_type_name))
@@ -261,21 +243,19 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
                 None,
             )
 
-            execute_query(insert_q, (
-                fee_uid,                   # fee_uid  <-- новый параметр
-                order_id_to_save,          # order_id
-                ext_order_id,              # ext_order_id
-                fee_group,                 # fee_group
-                fee_name,                  # fee_name
-                op_amount,                 # amount
-                str(op_type) if op_type else None,  # operation_type
-                op_date,                   # occurred_at
-                None,                      # sku
+            page_params.append((
+                fee_uid,
+                order_id_to_save,
+                ext_order_id,
+                fee_group,
+                fee_name,
+                op_amount,
+                str(op_type) if op_type else None,
+                op_date,
+                None,
             ))
-            total_rows += 1
             continue
 
-          # ✅ Иначе — пишем построчно по services
           for svc in services:
             name = svc.get("name") or svc.get("type") or "UNKNOWN"
             amount = svc.get("price")
@@ -304,18 +284,20 @@ def load_transactions_window(date_from: datetime, date_to: datetime):
                 sku,
             )
 
-            execute_query(insert_q, (
-                fee_uid,                   # fee_uid  <-- новый параметр
-                order_id_to_save,          # order_id
-                ext_order_id,              # ext_order_id
-                fee_group,                 # fee_group
-                fee_name,                  # fee_name
-                amount_dec,                # amount
-                str(op_type) if op_type else None,  # operation_type
-                op_date,                   # occurred_at
-                sku,                       # sku
+            page_params.append((
+                fee_uid,
+                order_id_to_save,
+                ext_order_id,
+                fee_group,
+                fee_name,
+                amount_dec,
+                str(op_type) if op_type else None,
+                op_date,
+                sku,
             ))
-            total_rows += 1
+
+        execute_many(insert_q, page_params)
+        total_rows += len(page_params)
 
         # пагинация
         # Часто в ответе есть page_count/total — но чтобы не гадать, делаем простой критерий:
@@ -332,10 +314,7 @@ def run(date_from_str: str, date_to_str: str):
     date_from = datetime.strptime(date_from_str, "%Y-%m-%d")
     date_to = datetime.strptime(date_to_str, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
 
-    # чистим предыдущую загрузку API
-    # execute_query("DELETE FROM order_fee_items WHERE source='finance_api';")
-
-    # режем период на окна по 10 дней (ограничение метода). :contentReference[oaicite:4]{index=4}
+    # режем период на окна по 10 дней (ограничение метода)
     window = timedelta(days=10)
     cur_from = date_from
     total = 0

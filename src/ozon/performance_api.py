@@ -18,6 +18,3 @@ def get_perf_token() -> str:
     data = r.json()
     return data["access_token"]
 
-if __name__ == "__main__":
-    token = get_perf_token()
-    print("OK, token starts with:", token[:25])

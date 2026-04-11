@@ -20,14 +20,9 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.core.db import execute_query, fetch_one
+from src.core.db import execute_many, execute_query, fetch_one
 from src.catalog.product_catalog import PRODUCT_CATALOG
-
-# ВАЖНО:
-# Я предполагаю, что у тебя в seller_api.py есть фабрика клиента и метод get_postings_fbo.
-# Если имена отличаются — замени импорт/вызов ниже.
 from src.ozon.seller_api import get_default_seller_client
-from src.core.db import execute_query
 
 import re
 
@@ -294,19 +289,19 @@ def sync_order_fee_items(order_id: str, fee_items: List[Dict[str, Any]]) -> None
     VALUES (%s, %s, %s, %s, %s, %s, %s);
     """
 
-    for it in fee_items:
-        execute_query(
-            q,
-            (
-                order_id,
-                it.get("fee_group"),
-                it.get("fee_name"),
-                it.get("amount"),
-                it.get("percent"),
-                it.get("product_id"),
-                it.get("source", "posting_financial"),
-            ),
+    params = [
+        (
+            order_id,
+            it.get("fee_group"),
+            it.get("fee_name"),
+            it.get("amount"),
+            it.get("percent"),
+            it.get("product_id"),
+            it.get("source", "posting_financial"),
         )
+        for it in fee_items
+    ]
+    execute_many(q, params)
 
 
 # ---------------------------------------------------------------------
