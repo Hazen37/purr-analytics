@@ -9,8 +9,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d purr"]
       interval: 5s
@@ -72,13 +72,57 @@ services:
   #     "
   #   restart: unless-stopped
 
-  etl_cron:
+  # etl_cron:
+  #   env_file:
+  #     - .env
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: purr_etl_cron
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: purr
+  #     DB_USER: postgres
+  #     DB_PASSWORD: postgres
+  #     TZ: Europe/Moscow
+  #     ETL_RUN_EVERY_SECONDS: "1200"
+  #     ETL_LOOKBACK_DAYS: "30"
+  #     TEST_CUSTOMER_ID: "47533921"
+  #   volumes:
+  #     - ./deploy/sql/orders_clean.sql:/app/sql/orders_clean.sql:ro
+  #   command: >
+  #     sh -lc '
+  #       set -e
+  #       : "$${ETL_RUN_EVERY_SECONDS:=1200}"
+  #       : "$${ETL_LOOKBACK_DAYS:=30}"
+
+  #       mkdir -p /app
+  #       touch /app/etl.log
+
+  #       echo "[etl_cron] start $$(date -Iseconds)" | tee -a /app/etl.log
+
+  #       while true; do
+  #         echo "[etl_cron] run $$(date -Iseconds)" | tee -a /app/etl.log
+
+  #         echo "[etl_cron] update_all..." | tee -a /app/etl.log
+  #         python -m src.cli.update_all >> /app/etl.log 2>&1 || \
+  #           echo "[etl_cron] update_all FAILED $$(date -Iseconds)" | tee -a /app/etl.log
+
+  #         sleep "$$ETL_RUN_EVERY_SECONDS"
+  #       done
+  #     '
+  #   restart: unless-stopped
+
+  etl_runner:
     env_file:
       - .env
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: purr_etl_cron
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,34 +133,10 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       TZ: Europe/Moscow
-      # ETL_FROM: "2025-10-01"
-      ETL_RUN_EVERY_SECONDS: "1200"
       ETL_LOOKBACK_DAYS: "30"
-    command: >
-      sh -lc '
-        set -e
-
-        : "$${ETL_RUN_EVERY_SECONDS:=1200}"
-        : "$${ETL_LOOKBACK_DAYS:=30}"
-
-        mkdir -p /app
-        touch /app/etl.log
-
-        echo "[etl_cron] ETL_RUN_EVERY_SECONDS=$$ETL_RUN_EVERY_SECONDS" | tee -a /app/etl.log
-        echo "[etl_cron] ETL_LOOKBACK_DAYS=$$ETL_LOOKBACK_DAYS" | tee -a /app/etl.log
-        echo "[etl_cron] start $$(date -Iseconds)" | tee -a /app/etl.log
-
-        while true; do
-          echo "[etl_cron] run $$(date -Iseconds)" | tee -a /app/etl.log
-
-          python -m src.cli.update_all >> /app/etl.log 2>&1 || \
-            echo "[etl_cron] update_all failed $$(date -Iseconds)" >> /app/etl.log
-
-          sleep "$$ETL_RUN_EVERY_SECONDS"
-        done
-      '
-
-    restart: unless-stopped
+      TEST_CUSTOMER_ID: "47533921"
+    command: python -m src.cli.update_all
+    restart: "no"
 
 volumes:
   postgres_data:

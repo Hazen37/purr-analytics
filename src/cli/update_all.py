@@ -34,6 +34,13 @@ from src.etl.performance.campaigns import load_campaigns as run_perf_campaigns
 from src.etl.performance.daily import run as run_perf_daily
 from src.etl.performance.orders import run as run_perf_orders
 
+from src.etl.reviews.load_reviews import load_reviews
+
+from src.etl.analytics.sku_day_metrics import load_sku_day_metrics
+
+from src.etl.stocks.load_stocks import load_stocks_current
+
+from src.core.db import execute_query
 
 LOOKBACK_DAYS = int(os.getenv("ETL_LOOKBACK_DAYS", "30"))
 
@@ -42,6 +49,9 @@ ENABLE_PERFORMANCE = os.getenv("ETL_ENABLE_PERFORMANCE", "0") == "1"
 ENABLE_PERF_CAMPAIGNS = os.getenv("ETL_ENABLE_PERF_CAMPAIGNS", "1") == "1"
 ENABLE_PERF_DAILY = os.getenv("ETL_ENABLE_PERF_DAILY", "1") == "1"
 ENABLE_PERF_ORDERS = os.getenv("ETL_ENABLE_PERF_ORDERS", "1") == "1"
+ENABLE_REVIEWS = os.getenv("ETL_ENABLE_REVIEWS", "1") == "1"
+ENABLE_ANALYTICS = os.getenv("ETL_ENABLE_ANALYTICS", "1") == "1"
+ENABLE_STOCKS = os.getenv("ETL_ENABLE_STOCKS", "1") == "1"
 
 # Если 1 — падать на любом этапе; если 0 — продолжать (кроме orders/migrations)
 STRICT_MODE = os.getenv("ETL_STRICT_MODE", "1") == "1"
@@ -59,6 +69,32 @@ def _now_str() -> str:
 def log(msg: str) -> None:
     print(f"[update_all] {_now_str()} {msg}", flush=True)
 
+from textwrap import dedent
+
+TEST_CUSTOMER_ID = os.getenv("TEST_CUSTOMER_ID", "47533921")
+
+def recreate_orders_clean_view() -> None:
+    """
+    НЕЛЬЗЯ использовать CREATE OR REPLACE VIEW, если меняется список колонок (o.*).
+    Поэтому делаем DROP + CREATE, как в recalc.sh.
+    """
+    cid = TEST_CUSTOMER_ID.replace("'", "''")
+
+    # 1) drop
+    execute_query("DROP VIEW IF EXISTS public.orders_clean;")
+
+    # 2) create
+    sql = f"""
+    CREATE VIEW public.orders_clean AS
+    SELECT
+      o.*,
+      COALESCE(o.delivery_city, '(нет города)') || ' / ' ||
+      COALESCE(o.warehouse_name, '(нет склада)') AS delivery_cluster
+    FROM public.orders o
+    WHERE o.customer_id <> '{cid}';
+    """.strip()
+
+    execute_query(sql)
 
 def _compute_range(date_from: str | None, date_to: str | None) -> tuple[str, str]:
     """
@@ -112,7 +148,7 @@ def update_all(date_from: str | None = None, date_to: str | None = None) -> None
 
     # Заказы — удобнее передать datetime (как у тебя)
     date_from_dt = datetime.strptime(date_from_s, "%Y-%m-%d")
-    date_to_dt = datetime.strptime(date_to_s, "%Y-%m-%d")
+    date_to_dt   = datetime.strptime(date_to_s, "%Y-%m-%d") + timedelta(days=1)
 
     steps: list[Step] = [
         Step(
@@ -121,10 +157,25 @@ def update_all(date_from: str | None = None, date_to: str | None = None) -> None
             required=True,
         ),
         Step(
+            name="views: recreate orders_clean",
+            fn=lambda: recreate_orders_clean_view(),
+            required=True,
+        ),
+        Step(
             name="orders (seller api)",
             fn=lambda: load_fbo_orders_for_period(date_from=date_from_dt, date_to=date_to_dt),
             required=True,
         ),
+        Step(
+            name="orders: recalc order numbers",
+            fn=lambda: execute_query("SELECT public.recalc_order_numbers();"),
+            required=True,
+        ),
+        # Step(
+        #     name="reviews (seller api)",
+        #     fn=lambda: load_reviews(limit=100),
+        #     required=False,
+        # ),
         Step(
             name="finance (seller finance api)",
             fn=lambda: run_finance_api(date_from_s, date_to_s),
@@ -172,6 +223,36 @@ def update_all(date_from: str | None = None, date_to: str | None = None) -> None
             log("skip: performance orders (ETL_ENABLE_PERF_ORDERS=0)")
     else:
         log("skip: performance (ETL_ENABLE_PERFORMANCE=0)")
+    if ENABLE_REVIEWS:
+        steps.append(
+            Step(
+                name="reviews (seller api)",
+                fn=lambda: load_reviews(limit=100),
+                required=False,
+            )
+        )
+    else:
+        log("skip: reviews (ETL_ENABLE_REVIEWS=0)")
+    if ENABLE_ANALYTICS:
+        steps.append(
+            Step(
+                name="analytics (seller api): sku_day metrics",
+                fn=lambda: load_sku_day_metrics(date_from_s, date_to_s, recalc_days=14),
+                required=False,
+            )
+        )
+    else:
+        log("skip: analytics (ETL_ENABLE_ANALYTICS=0)")
+    if ENABLE_STOCKS:
+        steps.append(
+            Step(
+                name="stocks (seller api): current",
+                fn=lambda: load_stocks_current(),
+                required=False,
+            )
+        )
+    else:
+        log("skip: stocks (ETL_ENABLE_STOCKS=0)")
 
     t0 = time.time()
     for s in steps:

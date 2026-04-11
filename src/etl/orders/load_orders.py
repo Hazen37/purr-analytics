@@ -16,7 +16,7 @@ ETL: загрузка заказов (FBO postings) из Ozon Seller API в Post
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -27,7 +27,9 @@ from src.catalog.product_catalog import PRODUCT_CATALOG
 # Я предполагаю, что у тебя в seller_api.py есть фабрика клиента и метод get_postings_fbo.
 # Если имена отличаются — замени импорт/вызов ниже.
 from src.ozon.seller_api import get_default_seller_client
+from src.core.db import execute_query
 
+import re
 
 # ---------------------------------------------------------------------
 # Helpers
@@ -45,6 +47,29 @@ def _dec(x: Any) -> Decimal:
     except Exception:
         return Decimal("0")
 
+def to_moscow_naive(dt: Any) -> Any:
+    """
+    Приводит время из Ozon к Москве и делает naive datetime (для timestamp without time zone).
+    Считаем, что входное время в UTC, если tzinfo нет.
+    """
+    if dt is None:
+        return None
+
+    # строка ISO
+    if isinstance(dt, str):
+        dt = datetime.fromisoformat(dt.replace("Z", "+00:00"))
+
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        # Москва = UTC+3 (без DST)
+        return dt.astimezone(timezone(timedelta(hours=3))).replace(tzinfo=None)
+
+    return dt
+
+def extract_order_group_id(order_id: str) -> str:
+    s = (order_id or "").strip()
+    return re.sub(r"-\d+$", "", s) if s else s
 
 def extract_customer_id(posting_number: str) -> str:
     """
@@ -65,6 +90,82 @@ def extract_customer_id(posting_number: str) -> str:
     # fallback: весь posting_number как customer_id (лучше чем None)
     return s
 
+def extract_buyer_name(posting: Dict[str, Any]) -> Optional[str]:
+    addressee = posting.get("addressee") or {}
+    customer = posting.get("customer") or {}
+    return (addressee.get("name") or customer.get("name") or None)
+
+
+def extract_delivery_city(posting: Dict[str, Any]) -> Optional[str]:
+    ad = posting.get("analytics_data") or {}
+    return ad.get("city") or None
+
+
+def extract_warehouse_name(posting: Dict[str, Any]) -> Optional[str]:
+    ad = posting.get("analytics_data") or {}
+    return ad.get("warehouse_name") or None
+
+def extract_delivery_cluster(posting: Dict[str, Any]) -> Optional[str]:
+    # backward-compat: раньше поле называли delivery_cluster,
+    # теперь корректное название — delivery_city
+    return extract_delivery_city(posting)
+
+def extract_cluster_from(posting: Dict[str, Any]) -> Optional[str]:
+    fd = posting.get("financial_data") or {}
+    return fd.get("cluster_from") or None
+
+
+def extract_cluster_to(posting: Dict[str, Any]) -> Optional[str]:
+    fd = posting.get("financial_data") or {}
+    return fd.get("cluster_to") or None
+
+
+def extract_actions_and_promo(posting: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Возвращает (promo_code, ozon_actions)
+
+    promo_code:
+      первая строка из actions, которая НЕ является акцией Ozon
+
+    ozon_actions:
+      все строки из actions, которые являются акциями Ozon,
+      склеенные через '; '
+
+    К акциям Ozon сейчас относим:
+    - строки с 'бустинг'
+    - строки с 'распродажа стока'
+    """
+    fd = posting.get("financial_data") or {}
+    products = fd.get("products") or []
+
+    promo: Optional[str] = None
+    ozon_actions_list: List[str] = []
+
+    for pr in products:
+        actions = pr.get("actions") or []
+        for a in actions:
+            if not a:
+                continue
+
+            s = str(a).strip()
+            if not s:
+                continue
+
+            s_lower = s.lower()
+
+            is_ozon_action = (
+                "бустинг" in s_lower
+                or "распродажа стока" in s_lower
+            )
+
+            if is_ozon_action:
+                ozon_actions_list.append(s)
+            else:
+                if promo is None:
+                    promo = s
+
+    ozon_actions = "; ".join(dict.fromkeys(ozon_actions_list)) if ozon_actions_list else None
+    return promo, ozon_actions
 
 # ---------------------------------------------------------------------
 # Products + Order items
@@ -229,9 +330,10 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
         print("[orders] skip posting without posting_number")
         return
 
+    order_group_id = extract_order_group_id(str(order_id))
     customer_id = extract_customer_id(str(order_id))
 
-    # гарантируем customer
+    # гарантируем customer (нужен для FK)
     execute_query(
         """
         INSERT INTO customers (customer_id)
@@ -241,8 +343,19 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
         (customer_id,),
     )
 
+    buyer_name = extract_buyer_name(posting)
+    delivery_city = extract_delivery_city(posting)
+    warehouse_name = extract_warehouse_name(posting)
+
+    promo_code, ozon_actions = extract_actions_and_promo(posting)
+    cluster_from = extract_cluster_from(posting)
+    cluster_to = extract_cluster_to(posting)
+
+    created_at = posting.get("created_at")
     in_process_at = posting.get("in_process_at")
-    order_date = in_process_at if in_process_at is not None else None
+    shipment_date = posting.get("shipment_date")
+
+    order_date = to_moscow_naive(created_at or in_process_at or shipment_date)
     status = posting.get("status")
 
     revenue = calculate_order_revenue(posting)
@@ -251,33 +364,105 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
     execute_query(
         """
         INSERT INTO orders (
-            order_id, customer_id, order_date, status,
+            order_id, customer_id, order_group_id,
+            order_date, status,
             revenue, ozon_fees_total, ozon_payout,
-            campaign, is_first_order
+            delivery_city, warehouse_name, buyer_name,
+            promo_code, ozon_actions, cluster_from, cluster_to,
+            campaign
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, NULL, NULL)
+        VALUES (
+            %s, %s, %s,
+            %s, %s,
+            %s, %s, %s,
+            %s, %s, %s,
+            %s, %s, %s, %s,
+            NULL
+        )
         ON CONFLICT (order_id) DO UPDATE
         SET
-            customer_id     = EXCLUDED.customer_id,
-            order_date      = EXCLUDED.order_date,
-            status          = EXCLUDED.status,
-            revenue         = EXCLUDED.revenue,
-            ozon_fees_total = EXCLUDED.ozon_fees_total,
-            ozon_payout     = EXCLUDED.ozon_payout;
+            customer_id       = EXCLUDED.customer_id,
+            order_group_id    = EXCLUDED.order_group_id,
+            order_date        = EXCLUDED.order_date,
+            status            = EXCLUDED.status,
+            revenue           = EXCLUDED.revenue,
+            ozon_fees_total   = EXCLUDED.ozon_fees_total,
+            ozon_payout       = EXCLUDED.ozon_payout,
+            delivery_city     = EXCLUDED.delivery_city,
+            warehouse_name    = EXCLUDED.warehouse_name,
+            buyer_name        = EXCLUDED.buyer_name,
+            promo_code        = EXCLUDED.promo_code,
+            ozon_actions      = EXCLUDED.ozon_actions,
+            cluster_from      = EXCLUDED.cluster_from,
+            cluster_to        = EXCLUDED.cluster_to;
         """,
-        (order_id, customer_id, order_date, status, revenue, ozon_fees_total, ozon_payout),
+        (
+            str(order_id),
+            customer_id,
+            order_group_id,
+            order_date,
+            status,
+            revenue,
+            ozon_fees_total,
+            ozon_payout,
+            delivery_city,
+            warehouse_name,
+            buyer_name,
+            promo_code,
+            ozon_actions,
+            cluster_from,
+            cluster_to,
+        ),
     )
 
-    # детализация удержаний
     sync_order_fee_items(str(order_id), fee_items)
-
-    # строки заказа + каталог
     sync_order_items_and_products_from_posting(posting)
-
 
 # ---------------------------------------------------------------------
 # Recalc агрегатов
 # ---------------------------------------------------------------------
+
+def recalc_order_group_num_delivered() -> None:
+    execute_query(
+        """
+        WITH groups AS (
+          SELECT
+            customer_id,
+            order_group_id,
+            MIN(order_date) AS first_dt
+          FROM orders
+          WHERE status = 'delivered'
+            AND customer_id IS NOT NULL
+            AND order_group_id IS NOT NULL
+            AND order_date IS NOT NULL
+          GROUP BY customer_id, order_group_id
+        ),
+        ranked AS (
+          SELECT
+            customer_id,
+            order_group_id,
+            DENSE_RANK() OVER (
+              PARTITION BY customer_id
+              ORDER BY first_dt, order_group_id
+            ) AS grp_num
+          FROM groups
+        )
+        UPDATE orders o
+        SET order_group_num_delivered = r.grp_num
+        FROM ranked r
+        WHERE o.status = 'delivered'
+          AND o.customer_id = r.customer_id
+          AND o.order_group_id = r.order_group_id;
+        """
+    )
+
+    execute_query(
+        """
+        UPDATE orders
+        SET order_group_num_delivered = NULL
+        WHERE status IS DISTINCT FROM 'delivered';
+        """
+    )
 
 def recalc_customers_aggregates() -> None:
     execute_query(
@@ -318,6 +503,45 @@ def recalc_is_first_order_flags() -> None:
         """
     )
 
+def recalc_order_num_delivered() -> None:
+    """
+    Проставляет порядковый номер доставленного заказа для каждого клиента:
+      1,2,3... только среди status='delivered'.
+    Для заказов в других статусах ставит NULL.
+    Если какой-то прошлый заказ перестал быть delivered (отмена/возврат) —
+    нумерация пересчитается корректно.
+    """
+    # Нумеруем delivered
+    execute_query(
+        """
+        WITH ranked AS (
+          SELECT
+            order_id,
+            ROW_NUMBER() OVER (
+              PARTITION BY customer_id
+              ORDER BY order_date, order_id
+            ) AS rn
+          FROM orders
+          WHERE status = 'delivered'
+            AND customer_id IS NOT NULL
+            AND order_date IS NOT NULL
+        )
+        UPDATE orders o
+        SET order_num_delivered = r.rn
+        FROM ranked r
+        WHERE o.order_id = r.order_id;
+        """
+    )
+
+    # Всем недоставленным — NULL
+    execute_query(
+        """
+        UPDATE orders
+        SET order_num_delivered = NULL
+        WHERE status IS DISTINCT FROM 'delivered';
+        """
+    )
+
 
 def recalc_orders_finance() -> None:
     """
@@ -349,7 +573,8 @@ def recalc_orders_finance() -> None:
             SELECT order_id, SUM(amount) AS fees
             FROM order_fee_items
             WHERE order_id IS NOT NULL
-              AND NOT (source='finance_api' AND fee_group='Вознаграждение Ozon')
+            AND fee_group <> 'Скидки'
+            AND NOT (source='finance_api' AND fee_group='Вознаграждение Ozon')
             GROUP BY order_id
         ) f
         WHERE o.order_id = f.order_id;
@@ -371,10 +596,11 @@ def recalc_orders_fees_breakdown() -> None:
     execute_query(
         """
         WITH sums AS (
-          SELECT
+        SELECT
             order_id,
 
-            SUM(amount) AS fees_total,
+            -- fees_total БЕЗ скидок
+            SUM(CASE WHEN fee_group <> 'Скидки' THEN amount ELSE 0 END) AS fees_total,
 
             SUM(CASE WHEN fee_group='Услуги доставки' THEN amount ELSE 0 END)  AS delivery_fee,
             SUM(CASE WHEN fee_group='Услуги агентов' THEN amount ELSE 0 END)   AS acquiring_fee,
@@ -384,33 +610,34 @@ def recalc_orders_fees_breakdown() -> None:
             SUM(CASE WHEN fee_group='Скидки' THEN amount ELSE 0 END) AS discount_fee,
 
             SUM(CASE
-                  WHEN fee_group NOT IN (
+                WHEN fee_group NOT IN (
                     'Услуги доставки',
                     'Услуги агентов',
                     'Продвижение и реклама',
                     'Вознаграждение Ozon',
                     'Скидки'
-                  )
-                  THEN amount ELSE 0
+                )
+                THEN amount ELSE 0
                 END) AS other_fee_real
 
-          FROM order_fee_items
-          WHERE order_id IS NOT NULL
+        FROM order_fee_items
+        WHERE order_id IS NOT NULL
             AND NOT (source='finance_api' AND fee_group='Вознаграждение Ozon')
-          GROUP BY order_id
+        GROUP BY order_id
         )
         UPDATE orders o
         SET
-          ozon_fees_total        = COALESCE(s.fees_total, 0),
-          ozon_delivery_fee      = COALESCE(s.delivery_fee, 0),
-          ozon_acquiring_fee     = COALESCE(s.acquiring_fee, 0),
-          ozon_ads_fee           = COALESCE(s.ads_fee, 0),
+        ozon_fees_total        = COALESCE(s.fees_total, 0),
+        ozon_delivery_fee      = COALESCE(s.delivery_fee, 0),
+        ozon_acquiring_fee     = COALESCE(s.acquiring_fee, 0),
+        ozon_ads_fee           = COALESCE(s.ads_fee, 0),
 
-          ozon_sale_commission   = COALESCE(s.sale_commission, 0),
-          ozon_discount          = COALESCE(s.discount_fee, 0),
-          ozon_other_fee_real    = COALESCE(s.other_fee_real, 0),
+        ozon_sale_commission   = COALESCE(s.sale_commission, 0),
+        ozon_discount          = COALESCE(s.discount_fee, 0),
+        ozon_other_fee_real    = COALESCE(s.other_fee_real, 0),
 
-          profit                 = COALESCE(o.revenue, 0) + COALESCE(s.fees_total, 0)
+        -- profit без повторного учета скидки
+        profit                 = COALESCE(o.revenue, 0) + COALESCE(s.fees_total, 0)
         FROM sums s
         WHERE o.order_id = s.order_id;
         """
@@ -484,13 +711,15 @@ def load_fbo_orders_for_period(date_from: datetime, date_to: datetime) -> None:
         # не валим ETL, если колонок ещё нет
         print(f"[orders] missing marking skipped: {e}")
 
-    print("[orders] recalc customers / first order flags / finance ...")
+    print("[orders] recalc customers / finance ...")
     recalc_customers_aggregates()
-    recalc_is_first_order_flags()
+    # recalc_is_first_order_flags()  # в БД нет колонки is_first_order
+    recalc_order_num_delivered()
     recalc_orders_finance()
     recalc_orders_fees_breakdown()
+    recalc_order_group_num_delivered()
+    execute_query("SELECT public.recalc_order_numbers();")
     print("[orders] OK ✅")
-
 
 def load_fbo_orders_last_n_days(days: int = 30) -> None:
     date_to = datetime.utcnow()

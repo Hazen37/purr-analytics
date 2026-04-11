@@ -43,6 +43,26 @@ class OzonSellerClient:
 
     BASE_URL = "https://api-seller.ozon.ru"
 
+    def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        url = f"{self.BASE_URL}{path}"
+
+        try:
+            response = requests.get(url, params=params or {}, headers=self.headers, timeout=30)
+        except requests.RequestException as e:
+            raise OzonSellerAPIError(f"Ошибка сети при обращении к {url}: {e}")
+
+        if not response.ok:
+            raise OzonSellerAPIError(
+                f"Ошибка ответа Ozon API: статус {response.status_code}, тело: {response.text}"
+            )
+
+        try:
+            return response.json()
+        except ValueError:
+            raise OzonSellerAPIError(
+                f"Не удалось распарсить JSON-ответ от Ozon API: {response.text}"
+            )
+
     def __init__(self, client_id: str, api_key: str):
         """
         Инициализация клиента.
@@ -282,6 +302,67 @@ class OzonSellerClient:
 
         return postings
 
+    def get_product_prices(
+        self,
+        filter_payload: Optional[Dict[str, Any]] = None,
+        last_id: str = "",
+        limit: int = 1000,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "filter": filter_payload or {},
+            "last_id": last_id,
+            "limit": limit,
+        }
+        return self._post("/v4/product/info/prices", payload)
+
+    def get_actions(self) -> Dict[str, Any]:
+        return self._get("/v1/actions") 
+
+    def get_action_products(
+        self,
+        action_id: int,
+        limit: int = 1000,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        payload = {
+            "action_id": action_id,
+            "limit": limit,
+            "offset": offset,
+        }
+        return self._post("/v1/actions/products", payload)
+
+    def get_products_info(self, product_ids: List[int]) -> Dict[str, Any]:
+        payload = {
+            "product_id": product_ids
+        }
+        return self._post("/v3/product/info/list", payload)
+
+    def get_reviews(
+        self,
+        limit: int = 100,
+        last_id: Optional[int] = None,
+        sort_dir: str = "ASC",
+        status: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Получить пачку отзывов.
+        Пагинация обычно через last_id (зависит от метода, но это частый паттерн Ozon).
+
+        Возвращает сырой ответ.
+        """
+        payload: Dict[str, Any] = {
+            "limit": limit,
+            "sort_dir": sort_dir,
+        }
+        if last_id is not None:
+            payload["last_id"] = last_id
+        if status is not None:
+            payload["status"] = status
+
+        return self._post("/v1/review/list", payload)
+    def get_stock_on_warehouses(self, limit: int = 1000, offset: int = 0) -> dict:
+        return self._post("/v2/analytics/stock_on_warehouses", {"limit": limit, "offset": offset})
+
 
 def get_default_seller_client() -> OzonSellerClient:
     """
@@ -296,3 +377,13 @@ def get_default_seller_client() -> OzonSellerClient:
         client_id=settings.OZON_CLIENT_ID,
         api_key=settings.OZON_API_KEY,
     )
+
+def get_analytics_data(self, payload: dict) -> dict:
+    """
+    Seller Analytics: /v1/analytics/data
+    Premium/Non-premium различия обрабатываем выше уровнем.
+    """
+    return self._post("/v1/analytics/data", payload)
+
+def get_roles(self) -> dict:
+    return self._post("/v1/roles", {})

@@ -1,4 +1,4 @@
-# src/db.py
+# src/core/db.py
 
 """
 Модуль для работы с базой данных PostgreSQL.

@@ -16,6 +16,40 @@ from src.core.db import execute_query
 # Core tables
 # -----------------------------
 
+def create_reviews_table() -> None:
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS ozon_reviews (
+            review_id BIGINT PRIMARY KEY,
+
+            -- связь с товаром
+            sku BIGINT,
+            product_id BIGINT,
+            offer_id TEXT,
+            product_name TEXT,
+
+            -- сам отзыв
+            rating INT,
+            review_text TEXT,
+            published_at TIMESTAMP,
+            updated_at TIMESTAMP,
+            status TEXT,
+
+            -- реакции (если есть)
+            likes_count INT,
+            dislikes_count INT,
+
+            -- техническое
+            loaded_at TIMESTAMP DEFAULT now(),
+            raw JSONB
+        );
+        """
+    )
+
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ozon_reviews_sku ON ozon_reviews(sku);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ozon_reviews_product_id ON ozon_reviews(product_id);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ozon_reviews_published_at ON ozon_reviews(published_at);")
+
 def create_customers_table() -> None:
     execute_query(
         """
@@ -42,7 +76,6 @@ def create_orders_table() -> None:
             order_date TIMESTAMP,
             revenue NUMERIC,
             campaign TEXT,
-            is_first_order BOOLEAN,
             FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
         );
         """
@@ -61,6 +94,10 @@ def create_orders_table() -> None:
           ADD COLUMN IF NOT EXISTS ozon_payout NUMERIC,
           ADD COLUMN IF NOT EXISTS sales_report NUMERIC,
 
+          ADD COLUMN IF NOT EXISTS order_num_delivered INT,
+          ADD COLUMN IF NOT EXISTS order_group_id TEXT,
+          ADD COLUMN IF NOT EXISTS order_group_num_delivered INT,
+
           ADD COLUMN IF NOT EXISTS ozon_delivery_fee NUMERIC,
           ADD COLUMN IF NOT EXISTS ozon_acquiring_fee NUMERIC,
           ADD COLUMN IF NOT EXISTS ozon_ads_fee NUMERIC,
@@ -78,6 +115,95 @@ def create_orders_table() -> None:
           ADD COLUMN IF NOT EXISTS ozon_missing_at TIMESTAMP;
         """
     )
+
+    # используем orders_clean как VIEW (пересоздаём, потому что OR REPLACE не умеет "убирать" колонки)
+    execute_query("DROP VIEW IF EXISTS public.orders_clean;")
+
+    execute_query("""
+        CREATE VIEW public.orders_clean AS
+        SELECT
+        order_id,
+        customer_id,
+        order_date,
+        revenue,
+        campaign,
+        status,
+        ozon_fees_total,
+        ozon_payout,
+        sales_report,
+        ozon_delivery_fee,
+        ozon_acquiring_fee,
+        ozon_ads_fee,
+        campaign_id,
+        campaign_title,
+        ozon_ads_attributed,
+        ozon_sale_commission,
+        ozon_discount,
+        ozon_other_fee_real,
+        profit,
+        ozon_missing,
+        ozon_missing_at,
+        order_num_delivered,
+        order_group_id,
+        order_group_num_delivered
+        FROM public.orders
+        WHERE customer_id <> '47533921';
+    """)
+
+    # функция пересчёта нумерации заказов (кроме cancelled)
+    execute_query("""
+        CREATE OR REPLACE FUNCTION public.recalc_order_numbers()
+        RETURNS void
+        LANGUAGE plpgsql
+        AS $$
+        BEGIN
+        WITH base AS (
+            SELECT
+            order_id,
+            customer_id,
+            order_date,
+            COALESCE(order_group_id, order_id) AS group_key
+            FROM public.orders
+            WHERE status <> 'cancelled'
+        ),
+        grouped AS (
+            SELECT
+            order_id,
+            customer_id,
+            order_date,
+            group_key,
+            MIN(order_date) OVER (PARTITION BY customer_id, group_key) AS group_first_date
+            FROM base
+        ),
+        calc AS (
+            SELECT
+            order_id,
+            ROW_NUMBER() OVER (
+                PARTITION BY customer_id
+                ORDER BY order_date, order_id
+            ) AS order_num_delivered,
+            DENSE_RANK() OVER (
+                PARTITION BY customer_id
+                ORDER BY group_first_date, group_key
+            ) AS order_group_num_delivered
+            FROM grouped
+        )
+        UPDATE public.orders o
+        SET
+            order_num_delivered = c.order_num_delivered,
+            order_group_num_delivered = c.order_group_num_delivered
+        FROM calc c
+        WHERE o.order_id = c.order_id;
+
+        UPDATE public.orders
+        SET
+            order_num_delivered = NULL,
+            order_group_num_delivered = NULL
+        WHERE status = 'cancelled';
+        END;
+        $$;
+    """)
+
 
 
 def create_products_table() -> None:
@@ -139,7 +265,7 @@ def create_order_fee_items_table() -> None:
     )
 
     # обычный UNIQUE (без WHERE), чтобы ON CONFLICT(uid) работал
-    execute_query("DROP INDEX IF EXISTS ux_order_fee_items_uid;")
+    # execute_query("DROP INDEX IF EXISTS ux_order_fee_items_uid;")
     execute_query(
         """
         CREATE UNIQUE INDEX IF NOT EXISTS ux_order_fee_items_uid
@@ -259,7 +385,89 @@ def create_finance_period_costs_table() -> None:
 
     execute_query("CREATE INDEX IF NOT EXISTS idx_finance_period_costs_date ON finance_period_costs(cost_date);")
 
+def create_ozon_sku_day_metrics_table() -> None:
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS public.ozon_sku_day_metrics (
+          date date NOT NULL,
+          sku  bigint NOT NULL,
 
+          impressions integer NOT NULL DEFAULT 0,
+          views       integer NOT NULL DEFAULT 0,
+          cart_adds   integer NOT NULL DEFAULT 0,
+          ordered_units integer NOT NULL DEFAULT 0,
+          revenue     numeric(14,2) NOT NULL DEFAULT 0,
+
+          loaded_at   timestamptz NOT NULL DEFAULT now(),
+
+          PRIMARY KEY (date, sku)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ozon_sku_day_metrics_date ON public.ozon_sku_day_metrics(date);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_ozon_sku_day_metrics_sku  ON public.ozon_sku_day_metrics(sku);")
+
+def create_vw_ozon_sku_day_funnel() -> None:
+    execute_query("DROP VIEW IF EXISTS public.vw_ozon_sku_day_funnel;")
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.vw_sku_day_business AS
+        WITH orders_by_sku_day AS (
+        SELECT
+            DATE(order_date) AS date,
+            oi.sku,
+            SUM(oi.quantity) AS ordered_units,
+            SUM(oi.revenue)  AS revenue
+        FROM public.order_items oi
+        JOIN public.orders o ON o.order_id = oi.order_id
+        WHERE o.status = 'delivered'
+        GROUP BY 1, 2
+        )
+
+        SELECT
+        m.date,
+        m.sku,
+        p.name,
+        p.flavor,
+        p.grams,
+
+        m.impressions,
+        m.views,
+        CASE WHEN m.impressions = 0 THEN NULL ELSE m.views::numeric / m.impressions END AS ctr,
+
+        COALESCE(o.ordered_units, 0) AS ordered_units,
+        COALESCE(o.revenue, 0)       AS revenue,
+
+        CASE WHEN m.views = 0 THEN NULL ELSE o.ordered_units::numeric / m.views END AS cr,
+        CASE WHEN m.views = 0 THEN NULL ELSE o.revenue / m.views END AS revenue_per_view
+
+        FROM public.ozon_sku_day_metrics m
+        LEFT JOIN orders_by_sku_day o
+        ON o.date = m.date AND o.sku = m.sku
+        LEFT JOIN public.products p
+        ON p.sku = m.sku;
+        """
+    )
+
+def create_stocks_current_table() -> None:
+    execute_query("""
+    CREATE TABLE IF NOT EXISTS public.stocks_current (
+      sku BIGINT NOT NULL,
+      warehouse_id BIGINT NOT NULL DEFAULT 0,
+      warehouse_name TEXT,
+
+      free_to_sell BIGINT NOT NULL DEFAULT 0,
+      reserved     BIGINT NOT NULL DEFAULT 0,
+      total        BIGINT NOT NULL DEFAULT 0,
+
+      updated_at timestamptz NOT NULL DEFAULT now(),
+      raw JSONB,
+
+      PRIMARY KEY (sku, warehouse_id)
+    );
+    """)
+    execute_query("CREATE INDEX IF NOT EXISTS idx_stocks_current_updated_at ON public.stocks_current(updated_at);")
+    
 # -----------------------------
 # Runner
 # -----------------------------
@@ -295,8 +503,19 @@ def run() -> None:
     print("[migrations] finance_period_costs...")
     create_finance_period_costs_table()
 
-    print("[migrations] OK ✅")
+    print("[migrations] ozon_reviews...")
+    create_reviews_table()
 
+    print("[migrations] ozon_sku_day_metrics...")
+    create_ozon_sku_day_metrics_table()
+
+    print("[migrations] ozon_sku_day_metrics view...")
+    create_vw_ozon_sku_day_funnel()
+
+    print("[migrations] stocks_current...")
+    create_stocks_current_table()
+
+    print("[migrations] OK ✅")
 
 if __name__ == "__main__":
     run()
