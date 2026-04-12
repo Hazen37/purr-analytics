@@ -45,6 +45,26 @@ def resolve_posting_order_id(order_number: str | None) -> tuple[str | None, str 
     cand = str(order_number).strip()
 
     row = fetch_one(
+        "SELECT order_id FROM orders WHERE order_id = %s LIMIT 1;",
+        (cand,),
+    )
+    if row and row.get("order_id"):
+        return row["order_id"], None
+
+    row = fetch_one(
+        """
+        SELECT order_id
+        FROM orders
+        WHERE order_group_id = %s
+        ORDER BY order_date DESC
+        LIMIT 1;
+        """,
+        (cand,),
+    )
+    if row and row.get("order_id"):
+        return row["order_id"], cand
+
+    row = fetch_one(
         "SELECT order_id FROM orders WHERE order_id LIKE %s ORDER BY order_date DESC LIMIT 1;",
         (cand + "-%",)
     )

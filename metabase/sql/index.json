@@ -1,0 +1,2680 @@
+{
+  "derived_cards": [
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 1,
+      "name": "Orders + People",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "map",
+      "id": 2,
+      "name": "Revenue by state",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "bar",
+      "id": 3,
+      "name": "Customer satisfaction per category",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 4,
+      "name": "Product category orders per age group",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "table",
+      "id": 5,
+      "name": "Customer survey responses",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 3,
+          "tab_name": "Website Analysis"
+        }
+      ],
+      "display": "funnel",
+      "id": 6,
+      "name": "Checkout funnel",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "pie",
+      "id": 7,
+      "name": "Product breakdown",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "scatter",
+      "id": 8,
+      "name": "Total order amount vs. discount given",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "line",
+      "id": 9,
+      "name": "Revenue",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "pivot",
+      "id": 10,
+      "name": "Orders according to sources per quarter",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 3,
+          "tab_name": "Website Analysis"
+        }
+      ],
+      "display": "sankey",
+      "id": 11,
+      "name": "User flow diagram",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "combo",
+      "id": 12,
+      "name": "Revenue and orders over time",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "bar",
+      "id": 13,
+      "name": "Revenue by product category",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 3,
+          "tab_name": "Website Analysis"
+        }
+      ],
+      "display": "waterfall",
+      "id": 14,
+      "name": "Subscription seats over time",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "smartscalar",
+      "id": 15,
+      "name": "Revenue per quarter",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 3,
+          "tab_name": "Website Analysis"
+        }
+      ],
+      "display": "area",
+      "id": 16,
+      "name": "Number of subscriptions",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "progress",
+      "id": 17,
+      "name": "Revenue goal for this quarter",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "bar",
+      "id": 18,
+      "name": "Product category orders per age",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "line",
+      "id": 19,
+      "name": "Number of Orders",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "pie",
+      "id": 20,
+      "name": "Total orders by product category",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "row",
+      "id": 21,
+      "name": "Best selling products",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 2,
+          "tab_name": "Portfolio Performance"
+        }
+      ],
+      "display": "gauge",
+      "id": 22,
+      "name": "Average product rating",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 3,
+          "tab_name": "Website Analysis"
+        }
+      ],
+      "display": "object",
+      "id": 23,
+      "name": "Most recent subscription",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [
+        {
+          "dashboard_id": 1,
+          "dashboard_name": "E-commerce Insights",
+          "tab_id": 1,
+          "tab_name": "Overview"
+        }
+      ],
+      "display": "line",
+      "id": 24,
+      "name": "Orders by product category",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 25,
+      "name": "All subscriptions in table view",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "smartscalar",
+      "id": 26,
+      "name": "Heavy-Duty Silk Chair trend",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "smartscalar",
+      "id": 27,
+      "name": "Quantity sold per quarter",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 28,
+      "name": "Revenue per age group",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "smartscalar",
+      "id": 29,
+      "name": "Enormous Wool Car trend",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "smartscalar",
+      "id": 30,
+      "name": "Unique customers per month",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "funnel",
+      "id": 31,
+      "name": "Checkout funnel - Modified",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 32,
+      "name": "People with age",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 33,
+      "name": "Revenue per individual age",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "smartscalar",
+      "id": 34,
+      "name": "Discounts given per quarter",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 35,
+      "name": "Orders by source per individual age",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 36,
+      "name": "Orders by source per age group",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": 1
+    },
+    {
+      "collection_id": 2,
+      "collection_name": "Examples",
+      "dashboard_usage": [],
+      "display": "smartscalar",
+      "id": 37,
+      "name": "Aerodynamic Copper Knife trend",
+      "query_type": "query",
+      "root_native_card_ids": [],
+      "source_card_id": null
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "scalar",
+      "id": 39,
+      "name": "Продано товаров",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "scalar",
+      "id": 40,
+      "name": "Всего покупателей",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "scalar",
+      "id": 41,
+      "name": "Прибыль",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "scalar",
+      "id": 42,
+      "name": "Выручка",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "scalar",
+      "id": 43,
+      "name": "Средний чек",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 52,
+      "name": "Модельный запрос - Вся информация по всем заказам",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "scalar",
+      "id": 54,
+      "name": "Оформлено заказов",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "scalar",
+      "id": 94,
+      "name": "Продано товаров",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "scalar",
+      "id": 95,
+      "name": "Всего покупателей",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "scalar",
+      "id": 96,
+      "name": "Прибыль",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "scalar",
+      "id": 97,
+      "name": "Выручка",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "scalar",
+      "id": 98,
+      "name": "Средний чек",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "scalar",
+      "id": 108,
+      "name": "Оформлено заказов",
+      "query_type": "query",
+      "root_native_card_ids": [
+        38
+      ],
+      "source_card_id": 38
+    }
+  ],
+  "extracted_at_utc": "2026-04-12T12:05:12Z",
+  "native_cards": [
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 38,
+      "name": "Модельный запрос - Вся информация по всем заказам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/038__modelnyy-zapros-vsya-informatsiya-po-vsem-zakazam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "bar",
+      "id": 44,
+      "name": "Количество купленных товаров по датам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/044__kolichestvo-kuplennyh-tovarov-po-datam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "combo",
+      "id": 45,
+      "name": "Прибыль и комиссии OZON по заказам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/045__pribyl-i-komissii-ozon-po-zakazam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        },
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 6,
+          "tab_name": "Затраты"
+        }
+      ],
+      "display": "area",
+      "id": 46,
+      "name": "Доли комиссий от выручки",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/046__doli-komissiy-ot-vyruchki.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 6,
+          "tab_name": "Затраты"
+        }
+      ],
+      "display": "area",
+      "id": 47,
+      "name": "Дополнительные услуги OZON",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/047__dopolnitelnye-uslugi-ozon.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "bar",
+      "id": 48,
+      "name": "Первые и повторные заказы по месяцам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/048__pervye-i-povtornye-zakazy-po-mesyatsam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "pie",
+      "id": 49,
+      "name": "Повторные заказы - Кольцо",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/049__povtornye-zakazy-koltso.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 4,
+          "tab_name": "Таблица заказов"
+        }
+      ],
+      "display": "table",
+      "id": 50,
+      "name": "Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/050__tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 6,
+          "tab_name": "Затраты"
+        }
+      ],
+      "display": "table",
+      "id": 51,
+      "name": "Периодические комиссии",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/051__periodicheskie-komissii.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "pie",
+      "id": 53,
+      "name": "Распределение доставленных товаров по городам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/053__raspredelenie-dostavlennyh-tovarov-po-gorodam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 5,
+          "tab_name": "Аналитика заказов"
+        }
+      ],
+      "display": "table",
+      "id": 55,
+      "name": "Статистика по промокодам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/055__statistika-po-promokodam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 7,
+          "tab_name": "Анализ"
+        }
+      ],
+      "display": "table",
+      "id": 56,
+      "name": "Анализ по остаткам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/056__analiz-po-ostatkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 3,
+          "dashboard_name": "PURR Analytics OZON",
+          "tab_id": 7,
+          "tab_name": "Анализ"
+        }
+      ],
+      "display": "table",
+      "id": 57,
+      "name": "Инвентаризация - продажи за месяц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/057__inventarizatsiya-prodazhi-za-mesyats.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 58,
+      "name": "Marketplace / Общее / Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/058__marketplace-obschee-vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "scalar",
+      "id": 59,
+      "name": "Оформлено заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/059__oformleno-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 60,
+      "name": "Marketplace / Общее / Продано единиц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/060__marketplace-obschee-prodano-edinits.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 61,
+      "name": "Marketplace / Общее / Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/061__marketplace-obschee-sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "line",
+      "id": 62,
+      "name": "Marketplace / Общее / Выручка по площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/062__marketplace-obschee-vyruchka-po-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 63,
+      "name": "Marketplace / Общее / Заказы по площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/063__marketplace-obschee-zakazy-po-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 64,
+      "name": "Marketplace / Общее / Расходы по площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/064__marketplace-obschee-rashody-po-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 65,
+      "name": "Marketplace / Общее / Сводка по площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/065__marketplace-obschee-svodka-po-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 66,
+      "name": "Marketplace / Общее / Свежесть данных",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/066__marketplace-obschee-svezhest-dannyh.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 67,
+      "name": "Marketplace / Яндекс Маркет / Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/067__marketplace-yandeks-market-vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 68,
+      "name": "Marketplace / Яндекс Маркет / Заказы",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/068__marketplace-yandeks-market-zakazy.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 69,
+      "name": "Marketplace / Яндекс Маркет / Продано единиц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/069__marketplace-yandeks-market-prodano-edinits.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 70,
+      "name": "Marketplace / Яндекс Маркет / Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/070__marketplace-yandeks-market-sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "line",
+      "id": 71,
+      "name": "Marketplace / Яндекс Маркет / Выручка по неделям",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/071__marketplace-yandeks-market-vyruchka-po-nedelyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 72,
+      "name": "Marketplace / Яндекс Маркет / Расходы",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/072__marketplace-yandeks-market-rashody.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 73,
+      "name": "Marketplace / Яндекс Маркет / Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/073__marketplace-yandeks-market-tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 74,
+      "name": "Marketplace / Яндекс Маркет / Свежесть данных",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/074__marketplace-yandeks-market-svezhest-dannyh.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 75,
+      "name": "Marketplace / Wildberries / Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/075__marketplace-wildberries-vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 76,
+      "name": "Marketplace / Wildberries / Заказы",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/076__marketplace-wildberries-zakazy.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 77,
+      "name": "Marketplace / Wildberries / Продано единиц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/077__marketplace-wildberries-prodano-edinits.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 78,
+      "name": "Marketplace / Wildberries / Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/078__marketplace-wildberries-sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "line",
+      "id": 79,
+      "name": "Marketplace / Wildberries / Выручка по неделям",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/079__marketplace-wildberries-vyruchka-po-nedelyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 80,
+      "name": "Marketplace / Wildberries / Расходы",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/080__marketplace-wildberries-rashody.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 81,
+      "name": "Marketplace / Wildberries / Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/081__marketplace-wildberries-tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 82,
+      "name": "Marketplace / Wildberries / Свежесть данных",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/082__marketplace-wildberries-svezhest-dannyh.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 83,
+      "name": "Marketplace / Ozon / Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/083__marketplace-ozon-vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 84,
+      "name": "Marketplace / Ozon / Заказы",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/084__marketplace-ozon-zakazy.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 85,
+      "name": "Marketplace / Ozon / Продано единиц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/085__marketplace-ozon-prodano-edinits.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "scalar",
+      "id": 86,
+      "name": "Marketplace / Ozon / Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/086__marketplace-ozon-sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "line",
+      "id": 87,
+      "name": "Marketplace / Ozon / Выручка по неделям",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/087__marketplace-ozon-vyruchka-po-nedelyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "bar",
+      "id": 88,
+      "name": "Marketplace / Ozon / Расходы",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/088__marketplace-ozon-rashody.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 89,
+      "name": "Marketplace / Ozon / Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/089__marketplace-ozon-tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 90,
+      "name": "Marketplace / Ozon / Свежесть данных",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/090__marketplace-ozon-svezhest-dannyh.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 91,
+      "name": "Marketplace / Ozon / Анализ по остаткам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/091__marketplace-ozon-analiz-po-ostatkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [],
+      "display": "table",
+      "id": 92,
+      "name": "Marketplace / Ozon / Инвентаризация - продажи за месяц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/092__marketplace-ozon-inventarizatsiya-prodazhi-za-mesyats.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "bar",
+      "id": 99,
+      "name": "Количество купленных товаров по датам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/099__kolichestvo-kuplennyh-tovarov-po-datam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "combo",
+      "id": 100,
+      "name": "Прибыль и комиссии OZON по заказам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/100__pribyl-i-komissii-ozon-po-zakazam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        },
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "area",
+      "id": 101,
+      "name": "Доли комиссий от выручки",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/101__doli-komissiy-ot-vyruchki.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "area",
+      "id": 102,
+      "name": "Дополнительные услуги OZON",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/102__dopolnitelnye-uslugi-ozon.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "bar",
+      "id": 103,
+      "name": "Первые и повторные заказы по месяцам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/103__pervye-i-povtornye-zakazy-po-mesyatsam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "pie",
+      "id": 104,
+      "name": "Повторные заказы - Кольцо",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/104__povtornye-zakazy-koltso.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "table",
+      "id": 105,
+      "name": "Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/105__tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "table",
+      "id": 106,
+      "name": "Периодические комиссии",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/106__periodicheskie-komissii.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "pie",
+      "id": 107,
+      "name": "Распределение доставленных товаров по городам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/107__raspredelenie-dostavlennyh-tovarov-po-gorodam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "table",
+      "id": 109,
+      "name": "Статистика по промокодам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/109__statistika-po-promokodam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "table",
+      "id": 110,
+      "name": "Анализ по остаткам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/110__analiz-po-ostatkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 139,
+          "tab_name": "Ozon"
+        }
+      ],
+      "display": "table",
+      "id": 111,
+      "name": "Инвентаризация - продажи за месяц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/111__inventarizatsiya-prodazhi-za-mesyats.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "scalar",
+      "id": 112,
+      "name": "Продано товаров",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/112__prodano-tovarov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "scalar",
+      "id": 113,
+      "name": "Оформлено заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/113__oformleno-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "scalar",
+      "id": 114,
+      "name": "Всего покупателей",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/114__vsego-pokupateley.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "scalar",
+      "id": 115,
+      "name": "Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/115__vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "scalar",
+      "id": 116,
+      "name": "Прибыль",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/116__pribyl.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "scalar",
+      "id": 117,
+      "name": "Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/117__sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "bar",
+      "id": 118,
+      "name": "Количество купленных товаров по датам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/118__kolichestvo-kuplennyh-tovarov-po-datam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "combo",
+      "id": 119,
+      "name": "Прибыль и комиссии Яндекс Маркет по заказам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/119__pribyl-i-komissii-yandeks-market-po-zakazam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "area",
+      "id": 120,
+      "name": "Доли комиссий от выручки",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/120__doli-komissiy-ot-vyruchki.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "bar",
+      "id": 121,
+      "name": "Статусы заказов по месяцам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/121__statusy-zakazov-po-mesyatsam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "pie",
+      "id": 122,
+      "name": "Статусы заказов - кольцо",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/122__statusy-zakazov-koltso.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "table",
+      "id": 123,
+      "name": "Статистика по комиссиям",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/123__statistika-po-komissiyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "pie",
+      "id": 124,
+      "name": "Распределение заказов по складам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/124__raspredelenie-zakazov-po-skladam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "table",
+      "id": 125,
+      "name": "Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/125__tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "area",
+      "id": 126,
+      "name": "Дополнительные услуги Яндекс Маркет",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/126__dopolnitelnye-uslugi-yandeks-market.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "table",
+      "id": 127,
+      "name": "Периодические комиссии",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/127__periodicheskie-komissii.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "table",
+      "id": 128,
+      "name": "Анализ по остаткам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/128__analiz-po-ostatkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "table",
+      "id": 129,
+      "name": "Инвентаризация - продажи за месяц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/129__inventarizatsiya-prodazhi-za-mesyats.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 140,
+          "tab_name": "Яндекс Маркет"
+        }
+      ],
+      "display": "table",
+      "id": 130,
+      "name": "Свежесть данных",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/130__svezhest-dannyh.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "scalar",
+      "id": 131,
+      "name": "Продано товаров",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/131__prodano-tovarov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "scalar",
+      "id": 132,
+      "name": "Оформлено заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/132__oformleno-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "scalar",
+      "id": 133,
+      "name": "Всего покупателей",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/133__vsego-pokupateley.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "scalar",
+      "id": 134,
+      "name": "Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/134__vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "scalar",
+      "id": 135,
+      "name": "Прибыль",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/135__pribyl.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "scalar",
+      "id": 136,
+      "name": "Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/136__sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "bar",
+      "id": 137,
+      "name": "Количество купленных товаров по датам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/137__kolichestvo-kuplennyh-tovarov-po-datam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "combo",
+      "id": 138,
+      "name": "Прибыль и комиссии Wildberries по заказам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/138__pribyl-i-komissii-wildberries-po-zakazam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "area",
+      "id": 139,
+      "name": "Доли комиссий от выручки",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/139__doli-komissiy-ot-vyruchki.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "bar",
+      "id": 140,
+      "name": "Статусы заказов по месяцам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/140__statusy-zakazov-po-mesyatsam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "pie",
+      "id": 141,
+      "name": "Статусы заказов - кольцо",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/141__statusy-zakazov-koltso.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "table",
+      "id": 142,
+      "name": "Статистика по комиссиям",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/142__statistika-po-komissiyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "pie",
+      "id": 143,
+      "name": "Распределение заказов по складам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/143__raspredelenie-zakazov-po-skladam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "table",
+      "id": 144,
+      "name": "Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/144__tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "area",
+      "id": 145,
+      "name": "Дополнительные услуги Wildberries",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/145__dopolnitelnye-uslugi-wildberries.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "table",
+      "id": 146,
+      "name": "Периодические комиссии",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/146__periodicheskie-komissii.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "table",
+      "id": 147,
+      "name": "Анализ по остаткам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/147__analiz-po-ostatkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "table",
+      "id": 148,
+      "name": "Инвентаризация - продажи за месяц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/148__inventarizatsiya-prodazhi-za-mesyats.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 141,
+          "tab_name": "Wildberries"
+        }
+      ],
+      "display": "table",
+      "id": 149,
+      "name": "Свежесть данных",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/149__svezhest-dannyh.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "scalar",
+      "id": 150,
+      "name": "Продано товаров",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/150__prodano-tovarov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "scalar",
+      "id": 151,
+      "name": "Всего покупателей",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/151__vsego-pokupateley.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "scalar",
+      "id": 152,
+      "name": "Выручка",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/152__vyruchka.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "scalar",
+      "id": 153,
+      "name": "Прибыль",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/153__pribyl.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "scalar",
+      "id": 154,
+      "name": "Средний чек",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/154__sredniy-chek.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "bar",
+      "id": 155,
+      "name": "Количество купленных товаров по датам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/155__kolichestvo-kuplennyh-tovarov-po-datam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "combo",
+      "id": 156,
+      "name": "Прибыль и комиссии по всем площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/156__pribyl-i-komissii-po-vsem-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "bar",
+      "id": 157,
+      "name": "Успешные заказы по площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/157__uspeshnye-zakazy-po-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "line",
+      "id": 158,
+      "name": "Выручка по площадкам по дням",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/158__vyruchka-po-ploschadkam-po-dnyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "line",
+      "id": 159,
+      "name": "Прибыль по площадкам по дням",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/159__pribyl-po-ploschadkam-po-dnyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "bar",
+      "id": 160,
+      "name": "Первые и повторные заказы по месяцам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/160__pervye-i-povtornye-zakazy-po-mesyatsam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "pie",
+      "id": 161,
+      "name": "Повторные заказы - кольцо",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/161__povtornye-zakazy-koltso.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "pie",
+      "id": 162,
+      "name": "Распределение заказов по площадкам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/162__raspredelenie-zakazov-po-ploschadkam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "pie",
+      "id": 163,
+      "name": "Распределение доставленных заказов по складам",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/163__raspredelenie-dostavlennyh-zakazov-po-skladam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "table",
+      "id": 164,
+      "name": "Таблица заказов",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/164__tablitsa-zakazov.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "area",
+      "id": 165,
+      "name": "Комиссии по категориям",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/165__komissii-po-kategoriyam.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "area",
+      "id": 166,
+      "name": "Дополнительные услуги",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/166__dopolnitelnye-uslugi.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "table",
+      "id": 167,
+      "name": "Периодические комиссии",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/167__periodicheskie-komissii.sql"
+    },
+    {
+      "collection_id": null,
+      "collection_name": null,
+      "dashboard_usage": [
+        {
+          "dashboard_id": 4,
+          "dashboard_name": "PURR Analytics Marketplace",
+          "tab_id": 138,
+          "tab_name": "Общее"
+        }
+      ],
+      "display": "table",
+      "id": 168,
+      "name": "Инвентаризация - продажи за месяц",
+      "query_type": "native",
+      "source_card_id": null,
+      "sql_file": "cards/168__inventarizatsiya-prodazhi-za-mesyats.sql"
+    }
+  ]
+}

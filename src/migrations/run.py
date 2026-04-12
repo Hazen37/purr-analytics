@@ -93,6 +93,7 @@ def create_orders_table() -> None:
           ADD COLUMN IF NOT EXISTS ozon_fees_total NUMERIC,
           ADD COLUMN IF NOT EXISTS ozon_payout NUMERIC,
           ADD COLUMN IF NOT EXISTS sales_report NUMERIC,
+          ADD COLUMN IF NOT EXISTS fulfillment_type TEXT,
 
           ADD COLUMN IF NOT EXISTS order_num_delivered INT,
           ADD COLUMN IF NOT EXISTS order_group_id TEXT,
@@ -111,6 +112,14 @@ def create_orders_table() -> None:
           ADD COLUMN IF NOT EXISTS ozon_other_fee_real NUMERIC,
           ADD COLUMN IF NOT EXISTS profit NUMERIC,
 
+          ADD COLUMN IF NOT EXISTS delivery_city TEXT,
+          ADD COLUMN IF NOT EXISTS warehouse_name TEXT,
+          ADD COLUMN IF NOT EXISTS buyer_name TEXT,
+          ADD COLUMN IF NOT EXISTS promo_code TEXT,
+          ADD COLUMN IF NOT EXISTS ozon_actions TEXT,
+          ADD COLUMN IF NOT EXISTS cluster_from TEXT,
+          ADD COLUMN IF NOT EXISTS cluster_to TEXT,
+
           ADD COLUMN IF NOT EXISTS ozon_missing BOOLEAN DEFAULT false,
           ADD COLUMN IF NOT EXISTS ozon_missing_at TIMESTAMP;
         """
@@ -128,6 +137,7 @@ def create_orders_table() -> None:
         revenue,
         campaign,
         status,
+        fulfillment_type,
         ozon_fees_total,
         ozon_payout,
         sales_report,
@@ -141,6 +151,13 @@ def create_orders_table() -> None:
         ozon_discount,
         ozon_other_fee_real,
         profit,
+        delivery_city,
+        warehouse_name,
+        buyer_name,
+        promo_code,
+        ozon_actions,
+        cluster_from,
+        cluster_to,
         ozon_missing,
         ozon_missing_at,
         order_num_delivered,
@@ -215,6 +232,117 @@ def create_products_table() -> None:
             flavor TEXT,
             grams  INT
         );
+        """
+    )
+
+
+def create_canonical_products_tables() -> None:
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS canonical_products (
+            canonical_product_id BIGSERIAL PRIMARY KEY,
+            canonical_key TEXT UNIQUE,
+            canonical_name TEXT NOT NULL,
+            flavor TEXT,
+            grams INT,
+            seed_marketplace TEXT,
+            seed_external_key TEXT,
+            source TEXT NOT NULL DEFAULT 'manual',
+            created_at TIMESTAMP NOT NULL DEFAULT now(),
+            updated_at TIMESTAMP NOT NULL DEFAULT now(),
+            UNIQUE (seed_marketplace, seed_external_key)
+        );
+        """
+    )
+    execute_query("CREATE INDEX IF NOT EXISTS idx_canonical_products_flavor ON canonical_products(flavor);")
+    execute_query("CREATE INDEX IF NOT EXISTS idx_canonical_products_grams ON canonical_products(grams);")
+
+    execute_query(
+        """
+        CREATE TABLE IF NOT EXISTS marketplace_product_mapping (
+            mapping_id BIGSERIAL PRIMARY KEY,
+            marketplace TEXT NOT NULL,
+            external_key_type TEXT NOT NULL,
+            external_key TEXT NOT NULL,
+            canonical_product_id BIGINT NOT NULL REFERENCES canonical_products(canonical_product_id) ON DELETE CASCADE,
+            source TEXT NOT NULL DEFAULT 'manual',
+            confidence NUMERIC(5, 4) NOT NULL DEFAULT 1.0,
+            notes TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT now(),
+            updated_at TIMESTAMP NOT NULL DEFAULT now(),
+            UNIQUE (marketplace, external_key_type, external_key)
+        );
+        """
+    )
+    execute_query(
+        "CREATE INDEX IF NOT EXISTS idx_marketplace_product_mapping_canonical "
+        "ON marketplace_product_mapping(canonical_product_id);"
+    )
+
+
+def seed_ozon_canonical_products() -> None:
+    execute_query(
+        """
+        INSERT INTO canonical_products (
+            canonical_key,
+            canonical_name,
+            flavor,
+            grams,
+            seed_marketplace,
+            seed_external_key,
+            source,
+            updated_at
+        )
+        SELECT
+            CONCAT('ozon-sku-', p.sku::text) AS canonical_key,
+            COALESCE(NULLIF(TRIM(p.name), ''), p.sku::text) AS canonical_name,
+            NULLIF(TRIM(p.flavor), '') AS flavor,
+            p.grams,
+            'ozon' AS seed_marketplace,
+            p.sku::text AS seed_external_key,
+            'ozon_seed' AS source,
+            now() AS updated_at
+        FROM public.products p
+        ON CONFLICT (seed_marketplace, seed_external_key)
+        DO UPDATE SET
+            canonical_key = EXCLUDED.canonical_key,
+            canonical_name = EXCLUDED.canonical_name,
+            flavor = EXCLUDED.flavor,
+            grams = EXCLUDED.grams,
+            source = EXCLUDED.source,
+            updated_at = now();
+        """
+    )
+
+    execute_query(
+        """
+        INSERT INTO marketplace_product_mapping (
+            marketplace,
+            external_key_type,
+            external_key,
+            canonical_product_id,
+            source,
+            confidence,
+            updated_at
+        )
+        SELECT
+            'ozon' AS marketplace,
+            'sku' AS external_key_type,
+            p.sku::text AS external_key,
+            cp.canonical_product_id,
+            'ozon_seed' AS source,
+            1.0 AS confidence,
+            now() AS updated_at
+        FROM public.products p
+        JOIN canonical_products cp
+          ON cp.seed_marketplace = 'ozon'
+         AND cp.seed_external_key = p.sku::text
+        ON CONFLICT (marketplace, external_key_type, external_key)
+        DO UPDATE SET
+            canonical_product_id = EXCLUDED.canonical_product_id,
+            source = EXCLUDED.source,
+            confidence = EXCLUDED.confidence,
+            updated_at = now();
         """
     )
 
@@ -703,7 +831,491 @@ def create_wildberries_tables() -> None:
         """
     )
     execute_query("CREATE INDEX IF NOT EXISTS idx_wb_ads_campaign_daily_date ON wb_ads_campaign_daily(stat_date);")
-    
+
+
+def create_marketplace_views() -> None:
+    execute_query("DROP VIEW IF EXISTS public.marketplace_order_items_enriched;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_data_freshness;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_sku_day_metrics;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_stocks_current;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_ads_daily;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_finance_items;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_order_items;")
+    execute_query("DROP VIEW IF EXISTS public.marketplace_orders;")
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_orders AS
+        SELECT
+            'ozon'::text AS marketplace,
+            o.order_id::text AS order_id,
+            o.order_date AS order_date,
+            o.status AS status,
+            o.revenue::numeric AS revenue,
+            o.customer_id::text AS customer_key,
+            o.fulfillment_type::text AS fulfillment_type,
+            o.warehouse_name::text AS warehouse_name,
+            o.delivery_city::text AS delivery_city,
+            o.cluster_to::text AS delivery_cluster,
+            o.promo_code::text AS promo_code,
+            o.ozon_actions::text AS promo_actions,
+            NULL::timestamp AS updated_at
+        FROM public.orders o
+        WHERE o.customer_id <> '47533921'
+
+        UNION ALL
+
+        SELECT
+            'yandex_market'::text AS marketplace,
+            o.order_id::text AS order_id,
+            o.order_date AS order_date,
+            o.status AS status,
+            o.total_amount::numeric AS revenue,
+            COALESCE(o.campaign_id::text, o.business_id::text) AS customer_key,
+            NULL::text AS fulfillment_type,
+            o.warehouse_id::text AS warehouse_name,
+            NULL::text AS delivery_city,
+            NULL::text AS delivery_cluster,
+            NULL::text AS promo_code,
+            NULL::text AS promo_actions,
+            o.updated_at AS updated_at
+        FROM public.ym_orders o
+
+        UNION ALL
+
+        SELECT
+            'wildberries'::text AS marketplace,
+            o.order_id::text AS order_id,
+            o.order_date AS order_date,
+            o.status AS status,
+            COALESCE(o.sale_price, o.price)::numeric AS revenue,
+            COALESCE(o.order_uid, o.article)::text AS customer_key,
+            NULL::text AS fulfillment_type,
+            o.warehouse_name::text AS warehouse_name,
+            NULL::text AS delivery_city,
+            NULL::text AS delivery_cluster,
+            NULL::text AS promo_code,
+            NULL::text AS promo_actions,
+            o.updated_at AS updated_at
+        FROM public.wb_orders o;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_order_items AS
+        SELECT
+            'ozon'::text AS marketplace,
+            oi.order_id::text AS order_id,
+            o.order_date AS order_date,
+            o.status AS status,
+            oi.sku::text AS sku,
+            p.name::text AS product_name,
+            oi.quantity::numeric AS quantity,
+            oi.revenue::numeric AS item_revenue,
+            o.fulfillment_type::text AS fulfillment_type,
+            o.warehouse_name::text AS warehouse_name,
+            NULL::timestamp AS updated_at
+        FROM public.order_items oi
+        JOIN public.orders o ON o.order_id = oi.order_id
+        LEFT JOIN public.products p ON p.sku = oi.sku
+        WHERE o.customer_id <> '47533921'
+
+        UNION ALL
+
+        SELECT
+            'yandex_market'::text AS marketplace,
+            oi.order_id::text AS order_id,
+            o.order_date AS order_date,
+            o.status AS status,
+            COALESCE(oi.sku, oi.offer_id)::text AS sku,
+            oi.name::text AS product_name,
+            oi.quantity::numeric AS quantity,
+            (oi.quantity * oi.price)::numeric AS item_revenue,
+            NULL::text AS fulfillment_type,
+            o.warehouse_id::text AS warehouse_name,
+            o.updated_at AS updated_at
+        FROM public.ym_order_items oi
+        JOIN public.ym_orders o ON o.order_id = oi.order_id
+
+        UNION ALL
+
+        SELECT
+            'wildberries'::text AS marketplace,
+            oi.order_id::text AS order_id,
+            o.order_date AS order_date,
+            o.status AS status,
+            COALESCE(oi.sku, oi.article)::text AS sku,
+            oi.article::text AS product_name,
+            COALESCE(oi.quantity, 1)::numeric AS quantity,
+            (COALESCE(oi.quantity, 1) * COALESCE(oi.price, o.sale_price, o.price))::numeric AS item_revenue,
+            NULL::text AS fulfillment_type,
+            o.warehouse_name::text AS warehouse_name,
+            o.updated_at AS updated_at
+        FROM public.wb_order_items oi
+        JOIN public.wb_orders o ON o.order_id = oi.order_id;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_order_items_enriched AS
+        SELECT
+            src.marketplace,
+            src.order_id,
+            src.order_date,
+            src.status,
+            src.sku,
+            src.product_name,
+            src.quantity,
+            src.item_revenue,
+            src.fulfillment_type,
+            src.warehouse_name,
+            src.updated_at,
+            src.offer_id,
+            src.article,
+            src.nm_id,
+            cp.canonical_product_id,
+            COALESCE(cp.canonical_key, src.seed_canonical_key) AS canonical_key,
+            COALESCE(cp.canonical_name, src.seed_canonical_name, src.product_name) AS canonical_name,
+            COALESCE(cp.flavor, src.seed_flavor) AS flavor,
+            COALESCE(cp.grams, src.seed_grams) AS grams,
+            src.mapping_key_type,
+            src.mapping_key
+        FROM (
+            SELECT
+                'ozon'::text AS marketplace,
+                oi.order_id::text AS order_id,
+                o.order_date AS order_date,
+                o.status AS status,
+                oi.sku::text AS sku,
+                p.name::text AS product_name,
+                oi.quantity::numeric AS quantity,
+                oi.revenue::numeric AS item_revenue,
+                o.fulfillment_type::text AS fulfillment_type,
+                o.warehouse_name::text AS warehouse_name,
+                NULL::timestamp AS updated_at,
+                NULL::text AS offer_id,
+                NULL::text AS article,
+                NULL::bigint AS nm_id,
+                map_ozon.canonical_product_id,
+                CONCAT('ozon-sku-', oi.sku::text) AS seed_canonical_key,
+                p.name::text AS seed_canonical_name,
+                p.flavor::text AS seed_flavor,
+                p.grams::int AS seed_grams,
+                map_ozon.external_key_type AS mapping_key_type,
+                map_ozon.external_key AS mapping_key
+            FROM public.order_items oi
+            JOIN public.orders o ON o.order_id = oi.order_id
+            LEFT JOIN public.products p ON p.sku = oi.sku
+            LEFT JOIN public.marketplace_product_mapping map_ozon
+              ON map_ozon.marketplace = 'ozon'
+             AND map_ozon.external_key_type = 'sku'
+             AND map_ozon.external_key = oi.sku::text
+            WHERE o.customer_id <> '47533921'
+
+            UNION ALL
+
+            SELECT
+                'yandex_market'::text AS marketplace,
+                oi.order_id::text AS order_id,
+                o.order_date AS order_date,
+                o.status AS status,
+                COALESCE(oi.sku, oi.offer_id)::text AS sku,
+                oi.name::text AS product_name,
+                oi.quantity::numeric AS quantity,
+                (oi.quantity * oi.price)::numeric AS item_revenue,
+                NULL::text AS fulfillment_type,
+                o.warehouse_id::text AS warehouse_name,
+                o.updated_at AS updated_at,
+                oi.offer_id::text AS offer_id,
+                NULL::text AS article,
+                NULL::bigint AS nm_id,
+                COALESCE(map_ym_offer.canonical_product_id, map_ym_sku.canonical_product_id) AS canonical_product_id,
+                NULL::text AS seed_canonical_key,
+                NULL::text AS seed_canonical_name,
+                NULL::text AS seed_flavor,
+                NULL::int AS seed_grams,
+                COALESCE(map_ym_offer.external_key_type, map_ym_sku.external_key_type) AS mapping_key_type,
+                COALESCE(map_ym_offer.external_key, map_ym_sku.external_key) AS mapping_key
+            FROM public.ym_order_items oi
+            JOIN public.ym_orders o ON o.order_id = oi.order_id
+            LEFT JOIN public.marketplace_product_mapping map_ym_offer
+              ON map_ym_offer.marketplace = 'yandex_market'
+             AND map_ym_offer.external_key_type = 'offer_id'
+             AND map_ym_offer.external_key = oi.offer_id::text
+            LEFT JOIN public.marketplace_product_mapping map_ym_sku
+              ON map_ym_sku.marketplace = 'yandex_market'
+             AND map_ym_sku.external_key_type = 'sku'
+             AND map_ym_sku.external_key = oi.sku::text
+
+            UNION ALL
+
+            SELECT
+                'wildberries'::text AS marketplace,
+                oi.order_id::text AS order_id,
+                o.order_date AS order_date,
+                o.status AS status,
+                COALESCE(oi.sku, oi.article)::text AS sku,
+                oi.article::text AS product_name,
+                COALESCE(oi.quantity, 1)::numeric AS quantity,
+                (COALESCE(oi.quantity, 1) * COALESCE(oi.price, o.sale_price, o.price))::numeric AS item_revenue,
+                NULL::text AS fulfillment_type,
+                o.warehouse_name::text AS warehouse_name,
+                o.updated_at AS updated_at,
+                NULL::text AS offer_id,
+                oi.article::text AS article,
+                o.nm_id AS nm_id,
+                COALESCE(map_wb_nmid.canonical_product_id, map_wb_article.canonical_product_id, map_wb_sku.canonical_product_id) AS canonical_product_id,
+                NULL::text AS seed_canonical_key,
+                NULL::text AS seed_canonical_name,
+                NULL::text AS seed_flavor,
+                NULL::int AS seed_grams,
+                COALESCE(map_wb_nmid.external_key_type, map_wb_article.external_key_type, map_wb_sku.external_key_type) AS mapping_key_type,
+                COALESCE(map_wb_nmid.external_key, map_wb_article.external_key, map_wb_sku.external_key) AS mapping_key
+            FROM public.wb_order_items oi
+            JOIN public.wb_orders o ON o.order_id = oi.order_id
+            LEFT JOIN public.marketplace_product_mapping map_wb_nmid
+              ON map_wb_nmid.marketplace = 'wildberries'
+             AND map_wb_nmid.external_key_type = 'nm_id'
+             AND map_wb_nmid.external_key = o.nm_id::text
+            LEFT JOIN public.marketplace_product_mapping map_wb_article
+              ON map_wb_article.marketplace = 'wildberries'
+             AND map_wb_article.external_key_type = 'article'
+             AND map_wb_article.external_key = oi.article::text
+            LEFT JOIN public.marketplace_product_mapping map_wb_sku
+              ON map_wb_sku.marketplace = 'wildberries'
+             AND map_wb_sku.external_key_type = 'sku'
+             AND map_wb_sku.external_key = oi.sku::text
+        ) src
+        LEFT JOIN public.canonical_products cp
+          ON cp.canonical_product_id = src.canonical_product_id;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_finance_items AS
+        SELECT
+            'ozon'::text AS marketplace,
+            fi.order_id::text AS order_id,
+            o.order_date AS happened_at,
+            fi.fee_group::text AS fee_group,
+            fi.fee_name::text AS fee_name,
+            ABS(fi.amount)::numeric AS amount,
+            fi.source::text AS fee_source
+        FROM public.order_fee_items fi
+        LEFT JOIN public.orders o ON o.order_id = fi.order_id
+
+        UNION ALL
+
+        SELECT
+            'yandex_market'::text AS marketplace,
+            fi.order_id::text AS order_id,
+            fi.happened_at AS happened_at,
+            NULL::text AS fee_group,
+            fi.fee_type::text AS fee_name,
+            ABS(fi.amount)::numeric AS amount,
+            'finance_items'::text AS fee_source
+        FROM public.ym_finance_items fi
+
+        UNION ALL
+
+        SELECT
+            'wildberries'::text AS marketplace,
+            fi.order_id::text AS order_id,
+            fi.happened_at AS happened_at,
+            NULL::text AS fee_group,
+            fi.fee_type::text AS fee_name,
+            ABS(fi.amount)::numeric AS amount,
+            'finance_items'::text AS fee_source
+        FROM public.wb_finance_items fi;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_ads_daily AS
+        SELECT
+            'ozon'::text AS marketplace,
+            pcd.stat_date::date AS stat_date,
+            pcd.campaign_id::text AS campaign_id,
+            pcd.campaign_title::text AS campaign_name,
+            COALESCE(pcd.impressions, 0)::bigint AS impressions,
+            COALESCE(pcd.clicks, 0)::bigint AS clicks,
+            COALESCE(pcd.spend, 0)::numeric AS spend,
+            COALESCE(pcd.orders_cnt, 0)::bigint AS orders_cnt,
+            COALESCE(pcd.orders_amount, 0)::numeric AS orders_amount
+        FROM public.performance_campaign_daily pcd
+
+        UNION ALL
+
+        SELECT
+            'yandex_market'::text AS marketplace,
+            pcd.stat_date::date AS stat_date,
+            pcd.campaign_id::text AS campaign_id,
+            pcd.campaign_id::text AS campaign_name,
+            COALESCE(pcd.impressions, 0)::bigint AS impressions,
+            COALESCE(pcd.clicks, 0)::bigint AS clicks,
+            COALESCE(pcd.spend, 0)::numeric AS spend,
+            COALESCE(pcd.orders_cnt, 0)::bigint AS orders_cnt,
+            COALESCE(pcd.orders_amount, 0)::numeric AS orders_amount
+        FROM public.ym_ads_campaign_daily pcd
+
+        UNION ALL
+
+        SELECT
+            'wildberries'::text AS marketplace,
+            pcd.stat_date::date AS stat_date,
+            pcd.campaign_id::text AS campaign_id,
+            pcd.campaign_id::text AS campaign_name,
+            COALESCE(pcd.impressions, 0)::bigint AS impressions,
+            COALESCE(pcd.clicks, 0)::bigint AS clicks,
+            COALESCE(pcd.spend, 0)::numeric AS spend,
+            COALESCE(pcd.orders_cnt, 0)::bigint AS orders_cnt,
+            COALESCE(pcd.orders_amount, 0)::numeric AS orders_amount
+        FROM public.wb_ads_campaign_daily pcd;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_stocks_current AS
+        SELECT
+            'ozon'::text AS marketplace,
+            sc.sku::text AS sku,
+            sc.warehouse_name::text AS warehouse_name,
+            COALESCE(sc.free_to_sell, 0)::numeric AS quantity_available,
+            COALESCE(sc.reserved, 0)::numeric AS quantity_reserved,
+            NULL::numeric AS quantity_in_transit,
+            sc.updated_at AS updated_at
+        FROM public.stocks_current sc
+
+        UNION ALL
+
+        SELECT
+            'yandex_market'::text AS marketplace,
+            sc.sku::text AS sku,
+            sc.warehouse_name::text AS warehouse_name,
+            COALESCE(sc.fit, 0)::numeric AS quantity_available,
+            COALESCE(sc.freeze_qty, 0)::numeric AS quantity_reserved,
+            NULL::numeric AS quantity_in_transit,
+            sc.updated_at AS updated_at
+        FROM public.ym_stocks_current sc
+
+        UNION ALL
+
+        SELECT
+            'wildberries'::text AS marketplace,
+            sc.sku::text AS sku,
+            sc.warehouse_name::text AS warehouse_name,
+            COALESCE(sc.quantity, 0)::numeric AS quantity_available,
+            NULL::numeric AS quantity_reserved,
+            COALESCE(sc.in_way_to_client, 0)::numeric + COALESCE(sc.in_way_from_client, 0)::numeric AS quantity_in_transit,
+            sc.updated_at AS updated_at
+        FROM public.wb_stocks_current sc;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_sku_day_metrics AS
+        SELECT
+            'ozon'::text AS marketplace,
+            m.date::date AS metric_date,
+            m.sku::text AS sku,
+            COALESCE(m.impressions, 0)::bigint AS impressions,
+            COALESCE(m.views, 0)::bigint AS views,
+            COALESCE(m.cart_adds, 0)::bigint AS cart_adds,
+            COALESCE(m.ordered_units, 0)::bigint AS ordered_units,
+            COALESCE(m.revenue, 0)::numeric AS revenue,
+            m.loaded_at::timestamp AS loaded_at
+        FROM public.ozon_sku_day_metrics m
+
+        UNION ALL
+
+        SELECT
+            'yandex_market'::text AS marketplace,
+            m.metric_date::date AS metric_date,
+            m.sku::text AS sku,
+            COALESCE(m.impressions, 0)::bigint AS impressions,
+            COALESCE(m.views, 0)::bigint AS views,
+            0::bigint AS cart_adds,
+            COALESCE(m.ordered_units, 0)::bigint AS ordered_units,
+            COALESCE(m.revenue, 0)::numeric AS revenue,
+            m.loaded_at::timestamp AS loaded_at
+        FROM public.ym_sku_day_metrics m
+
+        UNION ALL
+
+        SELECT
+            'wildberries'::text AS marketplace,
+            m.metric_date::date AS metric_date,
+            m.sku::text AS sku,
+            COALESCE(m.impressions, 0)::bigint AS impressions,
+            COALESCE(m.views, 0)::bigint AS views,
+            0::bigint AS cart_adds,
+            COALESCE(m.ordered_units, 0)::bigint AS ordered_units,
+            COALESCE(m.revenue, 0)::numeric AS revenue,
+            m.loaded_at::timestamp AS loaded_at
+        FROM public.wb_sku_day_metrics m;
+        """
+    )
+
+    execute_query(
+        """
+        CREATE OR REPLACE VIEW public.marketplace_data_freshness AS
+        WITH marketplaces AS (
+            SELECT 'ozon'::text AS marketplace
+            UNION ALL SELECT 'yandex_market'::text
+            UNION ALL SELECT 'wildberries'::text
+        ),
+        orders_agg AS (
+            SELECT marketplace, MAX(order_date) AS last_order_at, COUNT(*) AS orders_rows
+            FROM public.marketplace_orders
+            GROUP BY marketplace
+        ),
+        finance_agg AS (
+            SELECT marketplace, MAX(happened_at) AS last_finance_at, COUNT(*) AS finance_rows
+            FROM public.marketplace_finance_items
+            GROUP BY marketplace
+        ),
+        ads_agg AS (
+            SELECT marketplace, MAX(stat_date)::timestamp AS last_ads_at, COUNT(*) AS ads_rows
+            FROM public.marketplace_ads_daily
+            GROUP BY marketplace
+        ),
+        stocks_agg AS (
+            SELECT marketplace, MAX(updated_at) AS last_stock_at, COUNT(*) AS stock_rows
+            FROM public.marketplace_stocks_current
+            GROUP BY marketplace
+        ),
+        metrics_agg AS (
+            SELECT marketplace, MAX(metric_date)::timestamp AS last_metric_at, COUNT(*) AS metric_rows
+            FROM public.marketplace_sku_day_metrics
+            GROUP BY marketplace
+        )
+        SELECT
+            m.marketplace,
+            o.last_order_at,
+            f.last_finance_at,
+            a.last_ads_at,
+            s.last_stock_at,
+            k.last_metric_at,
+            COALESCE(o.orders_rows, 0) AS orders_rows,
+            COALESCE(f.finance_rows, 0) AS finance_rows,
+            COALESCE(a.ads_rows, 0) AS ads_rows,
+            COALESCE(s.stock_rows, 0) AS stock_rows,
+            COALESCE(k.metric_rows, 0) AS metric_rows
+        FROM marketplaces m
+        LEFT JOIN orders_agg o ON o.marketplace = m.marketplace
+        LEFT JOIN finance_agg f ON f.marketplace = m.marketplace
+        LEFT JOIN ads_agg a ON a.marketplace = m.marketplace
+        LEFT JOIN stocks_agg s ON s.marketplace = m.marketplace
+        LEFT JOIN metrics_agg k ON k.marketplace = m.marketplace;
+        """
+    )
+
 # -----------------------------
 # Runner
 # -----------------------------
@@ -717,6 +1329,10 @@ def run() -> None:
 
     print("[migrations] products...")
     create_products_table()
+
+    print("[migrations] canonical product bridge...")
+    create_canonical_products_tables()
+    seed_ozon_canonical_products()
 
     print("[migrations] order_items...")
     create_order_items_table()
@@ -756,6 +1372,9 @@ def run() -> None:
 
     print("[migrations] wb_* tables...")
     create_wildberries_tables()
+
+    print("[migrations] marketplace views...")
+    create_marketplace_views()
 
     print("[migrations] OK ✅")
 

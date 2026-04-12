@@ -26,7 +26,7 @@ from typing import Callable, Optional, Tuple
 
 from src.migrations.run import run as run_migrations
 
-from src.etl.orders.load_orders import load_fbo_orders_for_period
+from src.etl.orders.load_orders import load_ozon_orders_for_period
 from src.etl.finance.finance_api import run as run_finance_api
 from src.etl.finance.period_costs import recalc_period_costs as run_period_costs
 
@@ -204,7 +204,7 @@ def update_all(date_from: str | None = None, date_to: str | None = None) -> None
             [
                 Step(
                     name="orders (seller api)",
-                    fn=lambda: load_fbo_orders_for_period(date_from=date_from_dt, date_to=date_to_dt),
+                    fn=lambda: load_ozon_orders_for_period(date_from=date_from_dt, date_to=date_to_dt),
                     required=True,
                 ),
                 Step(

@@ -1,0 +1,18 @@
+-- Metabase native question export
+-- card_id: 68
+-- card_name: Marketplace / Яндекс Маркет / Заказы
+-- query_type: native
+-- display: scalar
+-- collection: Unknown
+-- extracted_at_utc: 2026-04-12T12:05:12Z
+-- dashboard_usage:
+--   - not used on dashboards
+
+SELECT
+  COUNT(DISTINCT order_id) AS orders_total
+FROM public.marketplace_orders mo
+WHERE 1=1
+  [[AND {{order_date}}]]
+  [[AND {{status}}]]
+  AND marketplace = 'yandex_market'
+;

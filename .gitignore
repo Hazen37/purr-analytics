@@ -115,6 +115,13 @@ Thumbs.db
 *.csv
 exports/
 
+# локальные снапшоты и SQL-библиотека Metabase
+metabase/backups/
+!metabase/sql/
+!metabase/sql/**/*.sql
+!metabase/sql/**/*.md
+!metabase/sql/**/*.json
+
 # =============================
 
 # Tests / Coverage (на будущее)

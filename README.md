@@ -18,7 +18,7 @@
 
 | Источник | Что грузится |
 |----------|----------------|
-| Seller API | FBO-отправления (заказы), позиции, клиенты, комиссии из posting, финансы (Finance API), остатки, отзывы, метрики воронки по SKU/дню |
+| Seller API | FBO/FBS-отправления (заказы), позиции, клиенты, комиссии из posting, финансы (Finance API), остатки FBO, отзывы, метрики воронки по SKU/дню |
 | Performance API | Кампании, дневная статистика, атрибуция заказов к рекламе |
 | Локальный справочник | `src/catalog/product_catalog.py` — вкус/граммы по SKU для связки с `products` |
 
@@ -92,13 +92,13 @@ purr-analytics/
 
 1. Миграции БД.
 2. Пересоздание представления **`orders_clean`** (исключение тестового покупателя, см. `TEST_CUSTOMER_ID`).
-3. Заказы FBO + товары + клиенты + комиссии из posting; внутри шага заказов вызывается **`recalc_order_numbers()`** в БД (отдельного дублирующего шага в `update_all` нет).
+3. Заказы Ozon FBO + FBS + товары + клиенты + комиссии из posting; внутри шага заказов вызывается **`recalc_order_numbers()`** в БД (отдельного дублирующего шага в `update_all` нет).
 4. Finance API → `order_fee_items`.
 5. Пересчёт **`finance_period_costs`**.
 6. Опционально **Performance** (только если `ETL_ENABLE_PERFORMANCE=1`).
 7. Отзывы (`ETL_ENABLE_REVIEWS`).
 8. Метрики воронки по SKU (`ozon_sku_day_metrics`, `ETL_ENABLE_ANALYTICS`).
-9. Текущие остатки **`stocks_current`** (`ETL_ENABLE_STOCKS`).
+9. Текущие остатки **`stocks_current`** (`ETL_ENABLE_STOCKS`). Сейчас это FBO-only слой: данные грузятся из `/v2/analytics/stock_on_warehouses` и агрегируются как `ALL_FBO`.
 
 Представление **`vw_sku_day_business`** (создаётся в миграциях) объединяет `ozon_sku_day_metrics` с заказами и справочником `products`.
 

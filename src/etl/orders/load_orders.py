@@ -1,6 +1,6 @@
 # src/etl/orders/load_orders.py
 """
-ETL: загрузка заказов (FBO postings) из Ozon Seller API в Postgres.
+ETL: загрузка заказов (FBO/FBS postings) из Ozon Seller API в Postgres.
 
 Что делает:
 - тянет postings за период
@@ -18,13 +18,15 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from src.core.db import execute_many, execute_query, fetch_one
 from src.catalog.product_catalog import PRODUCT_CATALOG
 from src.ozon.seller_api import get_default_seller_client
 
 import re
+
+FULFILLMENT_TYPES = ("fbo", "fbs")
 
 # ---------------------------------------------------------------------
 # Helpers
@@ -65,6 +67,13 @@ def to_moscow_naive(dt: Any) -> Any:
 def extract_order_group_id(order_id: str) -> str:
     s = (order_id or "").strip()
     return re.sub(r"-\d+$", "", s) if s else s
+
+
+def normalize_fulfillment_type(fulfillment_type: str | None) -> str:
+    value = (fulfillment_type or "").strip().lower()
+    if value not in FULFILLMENT_TYPES:
+        raise ValueError(f"Unsupported fulfillment_type: {fulfillment_type}")
+    return value
 
 def extract_customer_id(posting_number: str) -> str:
     """
@@ -319,7 +328,7 @@ def calculate_order_revenue(posting: Dict[str, Any]) -> Decimal:
     return total
 
 
-def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
+def upsert_order_from_posting(posting: Dict[str, Any], fulfillment_type: str) -> None:
     order_id = posting.get("posting_number")
     if not order_id:
         print("[orders] skip posting without posting_number")
@@ -352,6 +361,7 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
 
     order_date = to_moscow_naive(created_at or in_process_at or shipment_date)
     status = posting.get("status")
+    fulfillment_type = normalize_fulfillment_type(fulfillment_type)
 
     revenue = calculate_order_revenue(posting)
     ozon_payout, ozon_fees_total, fee_items = extract_ozon_finance_from_posting(posting)
@@ -360,7 +370,7 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
         """
         INSERT INTO orders (
             order_id, customer_id, order_group_id,
-            order_date, status,
+            order_date, status, fulfillment_type,
             revenue, ozon_fees_total, ozon_payout,
             delivery_city, warehouse_name, buyer_name,
             promo_code, ozon_actions, cluster_from, cluster_to,
@@ -368,7 +378,7 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
         )
         VALUES (
             %s, %s, %s,
-            %s, %s,
+            %s, %s, %s,
             %s, %s, %s,
             %s, %s, %s,
             %s, %s, %s, %s,
@@ -380,6 +390,7 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
             order_group_id    = EXCLUDED.order_group_id,
             order_date        = EXCLUDED.order_date,
             status            = EXCLUDED.status,
+            fulfillment_type  = EXCLUDED.fulfillment_type,
             revenue           = EXCLUDED.revenue,
             ozon_fees_total   = EXCLUDED.ozon_fees_total,
             ozon_payout       = EXCLUDED.ozon_payout,
@@ -397,6 +408,7 @@ def upsert_order_from_posting(posting: Dict[str, Any]) -> None:
             order_group_id,
             order_date,
             status,
+            fulfillment_type,
             revenue,
             ozon_fees_total,
             ozon_payout,
@@ -683,20 +695,46 @@ def mark_missing_orders_in_window(date_from: datetime, date_to: datetime, seen_o
 # Main ETL entrypoint
 # ---------------------------------------------------------------------
 
-def load_fbo_orders_for_period(date_from: datetime, date_to: datetime) -> None:
+def _fetch_postings_by_fulfillment(
+    client,
+    date_from: datetime,
+    date_to: datetime,
+    fulfillment_type: str,
+) -> List[Dict[str, Any]]:
+    fulfillment_type = normalize_fulfillment_type(fulfillment_type)
+    if fulfillment_type == "fbo":
+        return client.get_postings_fbo(date_from=date_from, date_to=date_to, limit=100)
+    return client.get_postings_fbs(date_from=date_from, date_to=date_to, limit=100)
+
+
+def load_ozon_orders_for_period(
+    date_from: datetime,
+    date_to: datetime,
+    fulfillment_types: Iterable[str] = FULFILLMENT_TYPES,
+) -> None:
     client = get_default_seller_client()
+    normalized_types = [normalize_fulfillment_type(item) for item in fulfillment_types]
 
-    print(f"[orders] load FBO postings: {date_from} .. {date_to}")
-    postings = client.get_postings_fbo(date_from=date_from, date_to=date_to, limit=100)
-    print(f"[orders] postings fetched: {len(postings)}")
-
+    print(f"[orders] load Ozon postings: {date_from} .. {date_to}")
     seen_order_ids: List[str] = []
+    seen_once: set[str] = set()
 
-    for p in postings:
-        order_id = p.get("posting_number")
-        if order_id:
-            seen_order_ids.append(str(order_id))
-        upsert_order_from_posting(p)
+    for fulfillment_type in normalized_types:
+        postings = _fetch_postings_by_fulfillment(
+            client=client,
+            date_from=date_from,
+            date_to=date_to,
+            fulfillment_type=fulfillment_type,
+        )
+        print(f"[orders] {fulfillment_type.upper()} postings fetched: {len(postings)}")
+        for posting in postings:
+            order_id = posting.get("posting_number")
+            if order_id:
+                order_id_str = str(order_id)
+                if order_id_str not in seen_once:
+                    seen_once.add(order_id_str)
+                    seen_order_ids.append(order_id_str)
+            upsert_order_from_posting(posting, fulfillment_type=fulfillment_type)
 
     # опционально: помечаем пропавшие в пределах окна
     # (если у тебя в миграциях добавлены ozon_missing/ozon_missing_at)
@@ -715,6 +753,14 @@ def load_fbo_orders_for_period(date_from: datetime, date_to: datetime) -> None:
     recalc_order_group_num_delivered()
     execute_query("SELECT public.recalc_order_numbers();")
     print("[orders] OK ✅")
+
+
+def load_fbo_orders_for_period(date_from: datetime, date_to: datetime) -> None:
+    load_ozon_orders_for_period(date_from=date_from, date_to=date_to, fulfillment_types=("fbo",))
+
+
+def load_fbs_orders_for_period(date_from: datetime, date_to: datetime) -> None:
+    load_ozon_orders_for_period(date_from=date_from, date_to=date_to, fulfillment_types=("fbs",))
 
 def load_fbo_orders_last_n_days(days: int = 30) -> None:
     date_to = datetime.utcnow()

@@ -52,6 +52,7 @@ def resolve_order_id(order_id_candidate: str | None) -> tuple[str | None, str | 
     """
     Возвращает (order_id_to_save, ext_order_id)
     - если нашли точное совпадение — пишем в order_id
+    - если нашли уникальное совпадение по order_group_id — привязываем к нему
     - если не нашли, но нашли 1 заказ по шаблону <candidate>-* — привязываем
     - иначе оставляем order_id NULL и пишем в ext_order_id
     """
@@ -64,7 +65,21 @@ def resolve_order_id(order_id_candidate: str | None) -> tuple[str | None, str | 
     if order_exists(cand):
         return cand, None
 
-    # 2) попытка найти order_id вида "<cand>-X"
+    # 2) попытка найти заказ по order_group_id
+    row = fetch_one(
+        """
+        SELECT order_id
+        FROM orders
+        WHERE order_group_id = %s
+        ORDER BY order_date DESC
+        LIMIT 1;
+        """,
+        (cand,),
+    )
+    if row and row.get("order_id"):
+        return row["order_id"], cand
+
+    # 3) попытка найти order_id вида "<cand>-X"
     row = fetch_one(
         "SELECT order_id FROM orders WHERE order_id LIKE %s ORDER BY order_date DESC LIMIT 2;",
         (cand + "-%",)
